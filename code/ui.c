@@ -144,7 +144,7 @@ void UpdateUiFrame(void)
     if (ui.currentMenu != UI_MENU_GAMEPLAY)
     {
         // Cancel/Back to main title menu
-        if (IsInputActionPressed(INPUT_ACTION_CANCEL) &&
+        if (input.actions.cancel &&
             ui.currentMenu != UI_MENU_TITLE &&
             ui.currentMenu != UI_MENU_PAUSE)
         {
@@ -160,7 +160,7 @@ void UpdateUiFrame(void)
 
     // Update in-game UI buttons
     // (touch virtual controls are separate, see UpdateUiTouchButton())
-    else if (!game.isPaused && game.touchMode)
+    else if (!game.isPaused && input.touchMode)
     {
         // Pause button
         UpdateUiButtonSelect(&ui.pause);
@@ -190,8 +190,7 @@ void UpdateUiMenuTraverse(void)
     UiTitleMenuId prevId = ui.selectedId; // used to play beep
 
     // Move cursor via mouse
-    bool mouseMoved = (Vector2Length(GetMouseDelta()) > 0);
-    if (mouseMoved || (ui.firstFrame && ui.lastSelectWithMouse))
+    if (input.mouse.moved || (ui.firstFrame && ui.lastSelectWithMouse))
     {
         for (unsigned int i = 0; i < menu->buttonCount; i++)
         {
@@ -208,8 +207,8 @@ void UpdateUiMenuTraverse(void)
     }
 
     // Move cursor via keyboard
-    bool isInputUp = IsInputActionDown(INPUT_ACTION_MENU_UP);
-    bool isInputDown = IsInputActionDown(INPUT_ACTION_MENU_DOWN);
+    bool isInputUp = input.actions.moveUp;
+    bool isInputDown = input.actions.moveDown;
     const float autoScrollInitPause = 0.6f;
 
     bool initialKeyPress = (!ui.autoScroll && ui.keyHeldTime == 0);
@@ -252,7 +251,7 @@ void UpdateUiMenuTraverse(void)
     }
 
     // Play sound when cursor moved
-    if (ui.selectedId != prevId && !ui.firstFrame && !game.touchMode)
+    if (ui.selectedId != prevId && !ui.firstFrame && !input.touchMode)
         PlaySound(game.sounds.menu);
 
     ui.firstFrame = false;
@@ -261,8 +260,7 @@ void UpdateUiMenuTraverse(void)
 
 // void UpdateUiButtonMouseHover(UiButton *button) // Disabled+Unused
 // {
-//     bool mouseMoved = (Vector2Length(GetMouseDelta()) > 0);
-//     if (!mouseMoved) return;
+//     if (!input.mouse.moved) return;
 
 //     if (IsMouseWithinUiButton(button))
 //     {
@@ -283,9 +281,8 @@ void UpdateUiButtonSelect(UiButton *button)
     int touchIdx = IsTouchWithinUiButton(button);
 
     // Select pause button
-    bool buttonTapped = ((touchIdx != -1) && IsTouchTapped(touchIdx));
-    bool buttonClicked = (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)
-                                  && IsMouseWithinUiButton(button));
+    bool buttonTapped = ((touchIdx != -1) && IsTouchPointTapped(touchIdx));
+    bool buttonClicked = (input.mouse.leftPressed && IsMouseWithinUiButton(button));
     if (!buttonTapped && !buttonClicked)
         button->clicked = false;
 
@@ -299,10 +296,12 @@ void UpdateUiButtonSelect(UiButton *button)
         }
     }
 
+    // else if (input.actions.confirm ||
+    //     (IsGestureDetected(GESTURE_TAP) &&
+    //      (!IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && IsMouseWithinUiButton(button))))
+
     // Select a menu button
-    else if (IsInputActionPressed(INPUT_ACTION_CONFIRM) ||
-        (IsGestureDetected(GESTURE_TAP) &&
-         (!IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && IsMouseWithinUiButton(button))))
+    else if (input.actions.confirm || buttonTapped || buttonClicked)
     {
         if (ui.currentMenu == UI_MENU_GAMEPLAY && !game.isPaused)
             return; // not a menu
@@ -351,16 +350,15 @@ void UpdateUiTouchInput(UiButton *button)
 
 void UpdateUiAnalogStick(UiAnalogStick *stick)
 {
-    Vector2 touchPos = { 0 };
     int touchIdx;
     if ((stick->lastTouchId != -1) &&
-        (GetTouchPointId(stick->lastTouchId) < game.touchCount))
+        (input.touchPoints[stick->lastTouchId].pressedCurrentFrame))
         touchIdx = stick->lastTouchId;
     else
         touchIdx = CheckCollisionTouchCircle(stick->centerPos, stick->centerRadius);
 
     // not touching analog stick
-    if (touchIdx == -1 || game.touchCount == 0 || IsTouchPressingButton(touchIdx))
+    if (touchIdx == -1 || input.touchCount == 0 || IsTouchingAnyButton(touchIdx))
     {
         stick->stickPos = stick->centerPos;
         stick->isActive = false;
@@ -369,8 +367,8 @@ void UpdateUiAnalogStick(UiAnalogStick *stick)
     }
 
     // is touching analog stick
-    stick->lastTouchId = GetTouchPointId(touchIdx);
-    touchPos = GetScreenToWorld2D(GetTouchPosition(touchIdx), game.camera);
+    stick->lastTouchId = input.touchPoints[touchIdx].id;
+    Vector2 touchPos = GetScreenToWorld2D(GetTouchPosition(touchIdx), game.camera);
 
     bool isTouchWithinStick =
         CheckCollisionPointCircle(touchPos, stick->centerPos, stick->centerRadius);
@@ -395,9 +393,7 @@ void ChangeUiMenu(UiMenuState newMenu)
     {
         // Reset game state if returning from gameplay
         if (game.currentScreen == SCREEN_GAMEPLAY)
-        {
             InitGameState(SCREEN_TITLE);
-        }
 
         ui.selectedId = UI_BID_START;
     }
@@ -421,7 +417,7 @@ void ChangeUiMenu(UiMenuState newMenu)
 
 bool IsMouseWithinUiButton(UiButton *button)
 {
-    Vector2 mousePos = GetScaledMousePosition();
+    Vector2 mousePos = input.mouse.position;
 
     int padding = UI_BUTTON_PADDING; // extra clickable area around the text
     int buttonWidth = MeasureText(button->text, button->fontSize);
@@ -475,7 +471,7 @@ void DrawUiFrame(void)
         for (unsigned int i = 0; i < menu->buttonCount; i++)
             DrawUiElement(&menu->buttons[i]);
     }
-    else if (game.currentScreen == SCREEN_GAMEPLAY && game.touchMode) // Touch controls
+    else if (game.currentScreen == SCREEN_GAMEPLAY && input.touchMode) // Touch controls
     {
         // Draw pause button
         DrawUiOutline(&ui.pause);
@@ -523,24 +519,24 @@ void DrawUiFrame(void)
 
     // Debug:
     // TODO make toggleable hotkey for debug overlay
-    /*
     Color touchColors[10] = { RED, BLUE, GREEN, YELLOW, ORANGE, PURPLE, BROWN, WHITE, GRAY, MAGENTA };
-    for (int i = 0; i < game.touchCount; ++i)
+    for (int i = 0; i < input.touchCount; ++i)
     {
-        Vector2 touchPosition = GetScreenToWorld2D(GetTouchPosition(i), game.camera);
-        DrawCircleV(touchPosition, 200.0f, touchColors[i]);
+        DrawCircleV(input.touchPoints[i].position, 155.0f, touchColors[i]);
     }
 
     const int textSize = 30;
     int textY = 150;
-    DrawText(TextFormat("%i touchCount", game.touchCount), 0, textY, textSize, RAYWHITE);
+    DrawText(TextFormat("%i touchCount", input.touchCount), 0, textY, textSize, RAYWHITE);
     textY += textSize;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 8; i++)
     {
-        DrawText(TextFormat("touch %i id: %i", i, GetTouchPointId(i)), 0, textY, textSize, RAYWHITE);
+        DrawText(TextFormat("touch %i x,y: %.0f,%.0f id: %i", i+1, input.touchPoints[i].position.x, input.touchPoints[i].position.y, input.touchPoints[i].id), 0, textY, textSize, RAYWHITE);
         textY += textSize;
     }
-    Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), game.camera);
+
+    /*
+    Vector2 mousePos = input.mouse.position;
     DrawText(TextFormat("mouse: %3.0f, %3.0f", mousePos.x, mousePos.y), 0, textY, textSize, RAYWHITE);
     textY += textSize;
     if (game.touchCount > 0)

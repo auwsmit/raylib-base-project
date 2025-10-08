@@ -32,24 +32,71 @@ typedef enum InputAction {
     INPUT_ACTION_SHOOT,
 } InputAction;
 
-typedef struct TouchState {
+typedef struct InputActionsGlobal {
+    bool fullscreen;
+    bool confirm;
+    bool cancel;
+    bool moveUp;
+    bool moveDown;
+    bool pause;
+} InputActionsGlobal;
+
+typedef struct InputActionsPlayer {
+    bool rotateLeft;
+    bool rotateRight;
+    bool thrust;
+    bool shoot;
+    bool thrustMouse;
+    bool shootMouse;
+} InputActionsPlayer;
+
+typedef struct InputMouseState {
     Vector2 position;
+    Vector2 delta;
+    bool moved;
+    bool tapped; // works for mouse click or touch point
+    bool leftPressed;
+    bool leftDown;
+    bool rightPressed;
+    bool rightDown;
+} InputMouseState;
+
+typedef struct TouchPoint {
+    Vector2 position;
+    bool isActive;
     bool pressedPreviousFrame;
     bool pressedCurrentFrame;
+    int id;
     int currentButton; // TODO this should probably just be a bool
                        // ... actually the touch screen input UI stuff just needs a rewrite
-} TouchState;
+} TouchPoint;
 
 typedef struct InputState {
-    KeyboardKey keyMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    MouseButton mouseMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    // GamepadButton gamepadButtonMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS]; // TODO
-    bool touchButtonPressed[INPUT_ACTIONS_COUNT]; // for touch screen buttons
-    TouchState touchPoints[INPUT_MAX_TOUCH_POINTS];
+    InputActionsGlobal actions; // keeps track of user input for current frame
+    InputActionsPlayer player;
+    InputMouseState mouse;
+    KeyboardKey keyMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS]; // keyboard mappings for input actions
+    MouseButton mouseMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS]; // mouse mappings
+    // Gesture gestureMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS]; // gesture mappings
+    // GamepadButton gamepadButtonMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
+
+    bool touchButtonPressed[INPUT_ACTIONS_COUNT]; // tracks touch screen input buttons
+    TouchPoint touchPoints[INPUT_MAX_TOUCH_POINTS];
+    int touchCount;
+    bool touchMode; // enabled when touch points are detected, disabled by any non-touch input
+    bool anyKeyPressed;
 } InputState;
+
+extern InputState input;
 
 // Prototypes
 // ----------------------------------------------------------------------------
+
+// Per-Frame
+void ProcessUserInput(void); // Process all user inputs for the current frame
+void ProcessVirtualGamepad(void); // Process touch screen input buttons
+void CancelUserInput(void); // Cancel all user inputs for the current frame
+
 // Input Actions
 void InitDefaultInputControls(void); // Sets the default key mapping control scheme
 bool IsInputKeyModifier(KeyboardKey key);
@@ -61,14 +108,13 @@ bool IsInputActionMouseDown(InputAction action);
 // Touch / Virtual Input
 void SetTouchInput(InputAction action, bool isButtonPressed);
 void SetTouchPointButton(int index, int buttonIdx); // Set a touch point's current button id (currently used for touch screen analog stick, which probably needs a redesign/rewrite)
-bool IsTouchTapped(int index); // Check if a touch point was tapped (works like IsKeyPressed)
-bool IsTouchPressingButton(int index); // Check if a touch point is pressing any button
+bool IsTouchPointTapped(int index); // Check if a touch point was tapped (works like IsKeyPressed)
+bool IsTouchingButton(int index, int buttonId); // Check if a touch point is pressing a specific button
+bool IsTouchingAnyButton(int index); // Check if a touch point is pressing any button
 int CheckCollisionTouchCircle(Vector2 center, float radius); // Check if any touch points are within a circle, returns index to touch point or -1
 int CheckCollisionTouchRec(Rectangle rec); // Check if any touch points are within a rectangle, returns index to touch point or -1
 
-// Helpers
-// int CheckAvailableGamepads(void); // TODO
-int UpdateInputTouchPoints(void); // Update touch point info for each frame
-Vector2 GetScaledMousePosition(void); // Scale mouse position to the game camera
+// Gamepad
+// int CheckAvailableGamepads(void);
 
 #endif // ASTEROIDS_INPUT_HEADER_GUARD

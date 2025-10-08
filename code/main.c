@@ -20,9 +20,10 @@ typedef struct Viewport {
 
 // Globals
 // ----------------------------------------------------------------------------
-GameState game; // game data
-UiState   ui;   // user interface data
-Viewport  view; // for rendering within aspect ratio
+GameState  game;  // program and game-specific data
+InputState input; // input module (default mappings and helper functions)
+UiState    ui;    // user interface module
+Viewport   view;  // for rendering within aspect ratio
 
 // Local Functions Declaration
 // ----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ int main(void)
     SetExitKey(KEY_NULL);
 
     // Debug:
-    // SetExitKey(KEY_Q);
+    SetExitKey(KEY_Q);
 
     // Start the game loop
     // (See UpdateDrawFrame() for the full game loop)
@@ -104,18 +105,10 @@ void UpdateDrawFrame(void)
 
     // Global updates
     game.frameTime = GetFrameTime();
-    // game.gamepad = CheckAvailableGamepads();
-    game.touchCount = UpdateInputTouchPoints();
-    game.anyKeyPressed = (GetKeyPressed() != 0);
-    if (game.touchCount == 0)
-    {
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) ||
-            IsMouseButtonDown(MOUSE_RIGHT_BUTTON) || game.anyKeyPressed)
-            game.touchMode = false;
-    }
-    else game.touchMode = true;
+    // input.gamepad = CheckAvailableGamepads();
     // TraceLog(LOG_INFO, TextFormat("touch count: %i\ntouch mode: %i", game.touchCount, game.touchMode));
 
+    ProcessUserInput();
     HandleToggleFullscreen();
     UpdateCameraViewport();
 
@@ -192,11 +185,11 @@ void HandleToggleFullscreen(void)
     // For now just use emscripten's fullscreen button
 #if !defined(PLATFORM_WEB)
     // Input for fullscreen
-    if (IsInputActionPressed(INPUT_ACTION_FULLSCREEN))
+    if (input.actions.fullscreen)
     {
         // Borderless Windowed is generally nicer to use on desktop
         ToggleBorderlessWindowed();
-        PollInputEvents(); // Skip to the next frame's input
+        CancelUserInput(); // Skip to the next frame's input
     }
 #endif
 }

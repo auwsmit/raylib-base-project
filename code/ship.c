@@ -30,8 +30,7 @@ void UpdateShip(SpaceShip *ship)
     // ----------------------------------------------------------------------------
 
     // Rotate (mouse)
-    bool mouseMoved = (Vector2Length(GetMouseDelta()) != 0);
-    if (!game.touchMode && mouseMoved)
+    if (!input.touchMode && input.mouse.moved)
     {
         RotateShipToMouse(ship);
     }
@@ -44,17 +43,16 @@ void UpdateShip(SpaceShip *ship)
     }
 
     // Rotate (keys)
-    if (IsInputActionDown(INPUT_ACTION_LEFT))
+    if (input.player.rotateLeft)
         ship->angle -= SHIP_TURN_SPEED*game.frameTime;
-    if (IsInputActionDown(INPUT_ACTION_RIGHT))
+    if (input.player.rotateRight)
         ship->angle += SHIP_TURN_SPEED*game.frameTime;
 
     // Thrust jet forward
-    bool inputActionThrust = IsInputActionDown(INPUT_ACTION_THRUST);
-    bool keyInputThrust = !IsInputActionMouseDown(INPUT_ACTION_THRUST);
-    bool mouseInputThrust = (!game.touchMode && !keyInputThrust);
-    bool touchInputThrust = (game.touchMode && ui.fly.clicked);
-    if ((inputActionThrust && game.resumeInputCooldown == false) &&
+    bool keyInputThrust = !input.player.thrustMouse;
+    bool mouseInputThrust = (!input.touchMode && !keyInputThrust);
+    bool touchInputThrust = (input.touchMode && ui.fly.clicked);
+    if ((input.player.thrust && game.resumeInputCooldown == false) &&
         (keyInputThrust || mouseInputThrust || touchInputThrust))
     {
         if (mouseInputThrust)
@@ -71,11 +69,10 @@ void UpdateShip(SpaceShip *ship)
         ship->isThrusting = false;
 
     // Shoot missile
-    bool inputActionShoot = IsInputActionDown(INPUT_ACTION_SHOOT);
-    bool keyInputShoot = !IsInputActionMouseDown(INPUT_ACTION_SHOOT);
-    bool mouseInputShoot = (!game.touchMode && !keyInputShoot);
-    bool touchInputShoot = (game.touchMode && ui.shoot.clicked);
-    if ((inputActionShoot && game.resumeInputCooldown == false) &&
+    bool keyInputShoot = !input.player.shootMouse;
+    bool mouseInputShoot = (!input.touchMode && !keyInputShoot);
+    bool touchInputShoot = (input.touchMode && ui.shoot.clicked);
+    if ((input.player.shoot && game.resumeInputCooldown == false) &&
         (keyInputShoot || mouseInputShoot || touchInputShoot))
     {
         if (mouseInputShoot)
@@ -186,7 +183,7 @@ void DrawShip(SpaceShip *ship)
 
             // DrawTriangle(cloneShip[0], cloneShip[1], cloneShip[2], shipColor);
             DrawTexturePro(sprite, spriteSrc, spriteCloneDest, spriteOrigin, ship->angle, shipColor);
-            if (IsInputActionDown(INPUT_ACTION_THRUST))
+            if (ship->isThrusting)
                 DrawTriangle(cloneJet[0], cloneJet[1], cloneJet[2], jetColor);
         }
     }
@@ -206,8 +203,7 @@ void UpdateShipTriangles(SpaceShip *ship)
 
 void RotateShipToMouse(SpaceShip *ship)
 {
-    Vector2 mousePos = GetScaledMousePosition();
-    Vector2 mouseDirection = Vector2Subtract(mousePos, ship->position);
+    Vector2 mouseDirection = Vector2Subtract(input.mouse.position, ship->position);
     ship->angle = (float)atan2(mouseDirection.y, mouseDirection.x)*RAD2DEG + 90;
 }
 

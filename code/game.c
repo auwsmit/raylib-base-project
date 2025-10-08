@@ -173,14 +173,6 @@ void FreeGameState(void)
 
 void UpdateGameFrame(void)
 {
-    // Update virtual input buttons
-    if (game.touchMode)
-    {
-        UpdateUiTouchInput(&ui.shoot);
-        UpdateUiTouchInput(&ui.fly);
-        UpdateUiAnalogStick(&ui.stick);
-    }
-
     // Detect win state and go to next level
     if (!game.levelFinished && (game.lives > 0) &&
         game.rockLimit == game.eliminatedCount)
@@ -193,8 +185,7 @@ void UpdateGameFrame(void)
         InitNewLevel(game.currentLevel + 1);
 
     // Pause
-    if (IsInputActionPressed(INPUT_ACTION_PAUSE) ||
-        IsInputActionPressed(INPUT_ACTION_CANCEL))
+    if (input.actions.pause || input.actions.cancel)
     {
         static float previousTextFade = 0.0f;
         game.isPaused = !game.isPaused;
@@ -225,10 +216,10 @@ void UpdateGameFrame(void)
         bool inputCooldownFinished = (SHIP_RESPAWN_TIME - game.ship.respawnTimer >= GAMEOVER_INPUT_COOLDOWN);
         if (game.lives == 0 && inputCooldownFinished)
         {
-            if (IsInputActionPressed(INPUT_ACTION_CONFIRM) || IsGestureDetected(GESTURE_TAP))
+            if (input.actions.confirm || input.mouse.tapped)
             {
-                PollInputEvents(); // Skip input this frame
                 InitNewLevel(1);
+                CancelUserInput();
             }
         }
 

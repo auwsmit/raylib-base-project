@@ -50,7 +50,6 @@ typedef struct GameState {
     Vector2 jetTriangle[3];
     Vector2 wrapOffsets[8];
     ScreenState currentScreen;
-    int touchCount;
     unsigned int currentLevel;
     unsigned int lives;
     unsigned int rockCountStartOfLevel;
@@ -60,8 +59,6 @@ typedef struct GameState {
     float frameTime;
     float messageTimer;
     float newLevelTimer;
-    bool anyKeyPressed;
-    bool touchMode;
     bool isPaused;
     bool levelFinished;
     bool resumeInputCooldown;
@@ -80,6 +77,7 @@ void FreeGameState(void); // Free any allocated memory within game state
 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
+void UpdateGameInput(void); // Updates game based on user input for the current frame
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
 
 // Collision

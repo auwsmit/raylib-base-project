@@ -39,7 +39,7 @@ void UpdateRaylibLogo(void)
     static bool skipped = false;
 
     // Press any key or click to skip intro
-    if (game.anyKeyPressed || IsGestureDetected(GESTURE_TAP)) // GESTURE_TAP works for touch and mouse click
+    if (input.anyKeyPressed || IsGestureDetected(GESTURE_TAP)) // GESTURE_TAP works for touch and mouse click
     {
         if (raylibLogo.state >= LOGO_TEXT)
             game.currentScreen = SCREEN_TITLE;

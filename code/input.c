@@ -4,10 +4,84 @@
 #include "input.h"
 #include "raymath.h"
 #include "config.h"
+#include "ui.h"
 #include "game.h"
 
-// Global struct to track input key mappings
-InputState gameInput = { 0 };
+void ProcessUserInput(void)
+{
+    input.anyKeyPressed = (GetKeyPressed() != 0);
+
+    // Check input mappings
+    input.actions.fullscreen =  IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
+    input.actions.confirm =     IsInputActionPressed(INPUT_ACTION_CONFIRM);
+    input.actions.cancel =      IsInputActionPressed(INPUT_ACTION_CANCEL);
+    input.actions.moveUp =      IsInputActionDown(INPUT_ACTION_MENU_UP);
+    input.actions.moveDown =    IsInputActionDown(INPUT_ACTION_MENU_DOWN);
+    input.actions.pause =       IsInputActionPressed(INPUT_ACTION_PAUSE);
+
+    input.player.rotateLeft =  IsInputActionDown(INPUT_ACTION_LEFT);
+    input.player.rotateRight = IsInputActionDown(INPUT_ACTION_RIGHT);
+    input.player.thrust =      IsInputActionDown(INPUT_ACTION_THRUST);
+    input.player.shoot =       IsInputActionDown(INPUT_ACTION_SHOOT);
+    input.player.thrustMouse = IsInputActionMouseDown(INPUT_ACTION_THRUST);
+    input.player.shootMouse =  IsInputActionMouseDown(INPUT_ACTION_SHOOT);
+
+    // Update mouse
+    input.mouse.position =     GetScreenToWorld2D(GetMousePosition(), game.camera);
+    input.mouse.delta =        GetMouseDelta();
+    input.mouse.moved =        (Vector2Length(input.mouse.delta) != 0);
+    input.mouse.tapped =       IsGestureDetected(GESTURE_TAP);
+    input.mouse.leftPressed =  IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    input.mouse.leftDown =     IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    input.mouse.rightPressed = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
+    input.mouse.rightDown =    IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
+
+    // Detect touch mode
+    int tCount = GetTouchPointCount();
+    input.touchCount = tCount;
+
+    if (input.touchCount == 0)
+    {
+        if (input.mouse.leftDown || input.mouse.rightDown || input.anyKeyPressed)
+            input.touchMode = false;
+    }
+    else input.touchMode = true;
+
+    if (!input.touchMode) return;
+
+    // Update touch points
+    if (tCount > INPUT_MAX_TOUCH_POINTS)
+        tCount = INPUT_MAX_TOUCH_POINTS;
+    for (int i = 0; i < tCount; i++)
+    {
+        Vector2 touchPosition = GetScreenToWorld2D(GetTouchPosition(i), game.camera);
+        TouchPoint *touchPoint = &input.touchPoints[i];
+        touchPoint->position = touchPosition;
+        touchPoint->pressedPreviousFrame = touchPoint->pressedCurrentFrame;
+        touchPoint->pressedCurrentFrame = true;
+        touchPoint->currentButton = -1;
+        touchPoint->id = GetTouchPointId(i);
+    }
+
+    for (int i = tCount; i < INPUT_MAX_TOUCH_POINTS; i++)
+        input.touchPoints[i].pressedCurrentFrame = false;
+
+    // Update touch input buttons
+    ProcessVirtualGamepad();
+}
+
+void ProcessVirtualGamepad(void)
+{
+    UpdateUiTouchInput(&ui.shoot);
+    UpdateUiTouchInput(&ui.fly);
+    UpdateUiAnalogStick(&ui.stick);
+}
+
+void CancelUserInput(void)
+{
+    input.actions = (InputActionsGlobal){ 0 };
+    input.player = (InputActionsPlayer){ 0 };
+}
 
 // Input Actions
 // ----------------------------------------------------------------------------
@@ -41,9 +115,9 @@ void InitDefaultInputControls(void)
 
     // Set touch point button ids (bad code. only used for touch screen analog stick, needs to be rewritten)
     for (unsigned int i = 0; i < INPUT_MAX_TOUCH_POINTS; ++i)
-        gameInput.touchPoints[i].currentButton = -1;
+        input.touchPoints[i].currentButton = -1;
 
-    gameInput = defaultControls;
+    input = defaultControls;
 }
 
 bool IsInputKeyModifier(KeyboardKey key)
@@ -58,11 +132,11 @@ bool IsInputKeyModifier(KeyboardKey key)
 bool IsInputActionPressed(InputAction action)
 {
     // Check touch screen button
-    if (gameInput.touchButtonPressed[action] == true)
+    if (input.touchButtonPressed[action] == true)
         return true;
 
     // Check potential key combinations
-    KeyboardKey* keys = gameInput.keyMaps[action];
+    KeyboardKey* keys = input.keyMaps[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && keys[i] != 0; i++)
     {
         KeyboardKey key = keys[i];
@@ -99,7 +173,7 @@ bool IsInputActionPressed(InputAction action)
 
 bool IsInputActionMousePressed(InputAction action)
 {
-    MouseButton* mb = gameInput.mouseMaps[action];
+    MouseButton* mb = input.mouseMaps[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && mb[i] != 0; i++)
     {
         MouseButton button = mb[i];
@@ -115,11 +189,11 @@ bool IsInputActionMousePressed(InputAction action)
 
 bool IsInputActionDown(InputAction action)
 {
-    if (gameInput.touchButtonPressed[action] == true)
+    if (input.touchButtonPressed[action] == true)
         return true;
 
     // Check potential key combinations
-    KeyboardKey* keys = gameInput.keyMaps[action];
+    KeyboardKey* keys = input.keyMaps[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && keys[i] != 0; i++)
     {
         KeyboardKey key = keys[i];
@@ -155,7 +229,7 @@ bool IsInputActionDown(InputAction action)
 
 bool IsInputActionMouseDown(InputAction action)
 {
-    MouseButton* mb = gameInput.mouseMaps[action];
+    MouseButton* mb = input.mouseMaps[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && mb[i] != 0; i++)
     {
         MouseButton button = mb[i];
@@ -173,30 +247,35 @@ bool IsInputActionMouseDown(InputAction action)
 // ----------------------------------------------------------------------------
 void SetTouchInput(InputAction action, bool isButtonPressed)
 {
-    gameInput.touchButtonPressed[action] = isButtonPressed;
+    input.touchButtonPressed[action] = isButtonPressed;
 }
 
 void SetTouchPointButton(int index, int buttonIdx)
 {
-    gameInput.touchPoints[index].currentButton = buttonIdx;
+    input.touchPoints[index].currentButton = buttonIdx;
 }
 
-bool IsTouchTapped(int index)
+bool IsTouchPointTapped(int index)
 {
-    return (gameInput.touchPoints[index].pressedCurrentFrame &&
-            !gameInput.touchPoints[index].pressedPreviousFrame);
+    return (input.touchPoints[index].pressedCurrentFrame &&
+            !input.touchPoints[index].pressedPreviousFrame);
 }
 
-bool IsTouchPressingButton(int index)
+bool IsTouchingButton(int index, int buttonId)
 {
-    return gameInput.touchPoints[index].currentButton != -1;
+    return input.touchPoints[index].currentButton != buttonId;
+}
+
+bool IsTouchingAnyButton(int index)
+{
+    return IsTouchingButton(index, -1);
 }
 
 int CheckCollisionTouchCircle(Vector2 center, float radius)
 {
-    for (int i = 0; i < game.touchCount; ++i)
+    for (int i = 0; i < input.touchCount; ++i)
     {
-        if (CheckCollisionPointCircle(gameInput.touchPoints[i].position, center, radius))
+        if (CheckCollisionPointCircle(input.touchPoints[i].position, center, radius))
             return i;
     }
 
@@ -205,46 +284,19 @@ int CheckCollisionTouchCircle(Vector2 center, float radius)
 
 int CheckCollisionTouchRec(Rectangle rec)
 {
-    for (int i = 0; i < game.touchCount; ++i)
+    for (int i = 0; i < input.touchCount; ++i)
     {
-        if (CheckCollisionPointRec(gameInput.touchPoints[i].position, rec))
+        if (CheckCollisionPointRec(input.touchPoints[i].position, rec))
             return i;
     }
 
     return -1;
 }
 
-// Helpers
+// Gamepad
 // ----------------------------------------------------------------------------
 
 // int CheckAvailableGamepads(void)
 // {
 //     // TODO
 // }
-
-int UpdateInputTouchPoints(void)
-{
-    int tCount = GetTouchPointCount();
-    game.touchCount = tCount;
-
-    if (tCount > INPUT_MAX_TOUCH_POINTS)
-        tCount = INPUT_MAX_TOUCH_POINTS;
-    for (int i = 0; i < tCount; i++)
-    {
-        Vector2 touchPosition = GetScreenToWorld2D(GetTouchPosition(i), game.camera);
-        gameInput.touchPoints[i].position = touchPosition;
-        gameInput.touchPoints[i].pressedPreviousFrame = gameInput.touchPoints[i].pressedCurrentFrame;
-        gameInput.touchPoints[i].pressedCurrentFrame = (GetTouchPointId(i) < tCount);
-    }
-
-    for (int i = 0; i < INPUT_MAX_TOUCH_POINTS; i++)
-        gameInput.touchPoints[i].currentButton = -1;
-
-    return tCount;
-}
-
-#define MIN(a, b) ((a)<(b)? (a) : (b))
-Vector2 GetScaledMousePosition(void)
-{
-    return GetScreenToWorld2D(GetMousePosition(), game.camera);
-}
