@@ -63,6 +63,7 @@ typedef struct GameState {
     bool levelFinished;
     bool resumeInputCooldown;
     bool gameShouldExit;
+    bool debugMode;
 } GameState;
 
 extern GameState game; // global declaration

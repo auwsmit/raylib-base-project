@@ -61,6 +61,7 @@ void InitGameState(ScreenState screen)
         .currentScreen = screen,
         .currentLevel = 1,
         .lives = STARTING_LIVES,
+        .debugMode = false,
     };
 
     // Generate random stars

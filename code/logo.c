@@ -38,8 +38,8 @@ void UpdateRaylibLogo(void)
     const float fadeSpeed = 1.0f; // Fade out in 1 second
     static bool skipped = false;
 
-    // Press any key or click to skip intro
-    if (input.anyKeyPressed || IsGestureDetected(GESTURE_TAP)) // GESTURE_TAP works for touch and mouse click
+    // Press any key/button or touch to skip
+    if (input.anyInputPressed)
     {
         if (raylibLogo.state >= LOGO_TEXT)
             game.currentScreen = SCREEN_TITLE;

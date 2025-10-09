@@ -18,20 +18,20 @@
 
 void InitUiState(void)
 {
-    UiState uiDefaults = {
+    UiState defaults = {
         .currentMenu = UI_MENU_TITLE,
         .selectedId = UI_BID_START,
         .firstFrame = true,
     };
 
-    uiDefaults.title[0] = InitUiTitle("Asteroids");
-    uiDefaults.title[1] = InitUiTitle("Remake");
+    defaults.title[0] = InitUiTitle("Asteroids");
+    defaults.title[1] = InitUiTitle("Remake");
 
     // Title menu buttons
-    UiMenu *titleMenu = &uiDefaults.menus[UI_MENU_TITLE];
+    UiMenu *titleMenu = &defaults.menus[UI_MENU_TITLE];
 
     float startPosX = VIRTUAL_WIDTH/2 - (float)MeasureText("Start", UI_TITLE_BUTTON_SIZE)/2;
-    float startPosY = uiDefaults.title[1].position.y + uiDefaults.title[1].fontSize;
+    float startPosY = defaults.title[1].position.y + defaults.title[1].fontSize;
     startPosY += UI_TITLE_SPACING;
     CreateUiMenuButton("Start", titleMenu, startPosX, startPosY, UI_TITLE_BUTTON_SIZE);
 #if !defined(PLATFORM_WEB)
@@ -39,7 +39,7 @@ void InitUiState(void)
 #endif
 
     // Pause menu
-    UiMenu *pauseMenu = &uiDefaults.menus[UI_MENU_PAUSE];
+    UiMenu *pauseMenu = &defaults.menus[UI_MENU_PAUSE];
     int resumeTextLength = MeasureText("Resume", UI_FONT_SIZE_EDGE);
     float resumePosX = (float)(VIRTUAL_WIDTH - resumeTextLength)/2;
     float resumePosY = (float)VIRTUAL_HEIGHT/2 + UI_FONT_SIZE_EDGE + UI_BUTTON_SPACING*2;
@@ -50,29 +50,29 @@ void InitUiState(void)
     int pauseTextLength = MeasureText("Pause", UI_FONT_SIZE_EDGE);
     float pausePosX = (float)(VIRTUAL_WIDTH - pauseTextLength)/2;
     float pausePosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    uiDefaults.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_FONT_SIZE_EDGE);
+    defaults.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_FONT_SIZE_EDGE);
 
     // Virtual thrust button
     int flyTextLength = MeasureText("Thrust", UI_FONT_SIZE_EDGE);
     float flyPosX = (float)(VIRTUAL_WIDTH - flyTextLength - UI_EDGE_PADDING - UI_BUTTON_PADDING);
     float flyPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    uiDefaults.fly = InitUiButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_FONT_SIZE_EDGE);
+    defaults.fly = InitUiButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_FONT_SIZE_EDGE);
 
     // Virtual shoot button
     int shootTextLength = MeasureText("Shoot", UI_FONT_SIZE_EDGE);
     float shootPosX = (float)(flyPosX - shootTextLength - UI_EDGE_PADDING - UI_BUTTON_PADDING);
     float shootPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    uiDefaults.shoot = InitUiButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_FONT_SIZE_EDGE);
+    defaults.shoot = InitUiButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_FONT_SIZE_EDGE);
 
     // Virtual analog stick
-    uiDefaults.stick.centerPos.x = UI_STICK_RADIUS + UI_EDGE_PADDING;
-    uiDefaults.stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - UI_EDGE_PADDING;
-    uiDefaults.stick.stickPos = uiDefaults.stick.centerPos;
-    uiDefaults.stick.centerRadius = UI_STICK_RADIUS;
-    uiDefaults.stick.stickRadius = UI_STICK_RADIUS/2;
-    uiDefaults.stick.lastTouchId = -1;
+    defaults.stick.centerPos.x = UI_STICK_RADIUS + UI_EDGE_PADDING;
+    defaults.stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - UI_EDGE_PADDING;
+    defaults.stick.stickPos = defaults.stick.centerPos;
+    defaults.stick.centerRadius = UI_STICK_RADIUS;
+    defaults.stick.stickRadius = UI_STICK_RADIUS/2;
+    defaults.stick.lastTouchId = -1;
 
-    ui = uiDefaults;
+    ui = defaults;
 }
 
 UiButton InitUiTitle(char *text)
@@ -140,6 +140,9 @@ void FreeUiState(void)
 
 void UpdateUiFrame(void)
 {
+    if (input.actions.debug)
+        game.debugMode = !game.debugMode;
+
     // Update title menu
     if (ui.currentMenu != UI_MENU_GAMEPLAY)
     {
@@ -335,17 +338,19 @@ void UpdateUiButtonSelect(UiButton *button)
 void UpdateUiTouchInput(UiButton *button)
 {
     InputAction buttonInputAction;
-    if (button->buttonId == UI_BID_SHOOT) buttonInputAction = INPUT_ACTION_SHOOT;
-    else if (button->buttonId == UI_BID_THRUST) buttonInputAction = INPUT_ACTION_THRUST;
+    if (button->buttonId == UI_BID_SHOOT)
+        buttonInputAction = INPUT_ACTION_SHOOT;
+    else if (button->buttonId == UI_BID_THRUST)
+        buttonInputAction = INPUT_ACTION_THRUST;
     else return;
 
     int touchIdx = IsTouchWithinUiButton(button);
-    bool buttonTapped = (touchIdx != -1);
-    if (buttonTapped)
+    bool isButtonTapped = (touchIdx != -1);
+    if (isButtonTapped)
         SetTouchPointButton(touchIdx, button->buttonId);
 
-    SetTouchInput(buttonInputAction, buttonTapped);
-    button->clicked = buttonTapped;
+    SetTouchInputAction(buttonInputAction, isButtonTapped);
+    button->clicked = isButtonTapped;
 }
 
 void UpdateUiAnalogStick(UiAnalogStick *stick)
@@ -519,6 +524,7 @@ void DrawUiFrame(void)
 
     // Debug:
     // TODO make toggleable hotkey for debug overlay
+    if (!game.debugMode) return;
     Color touchColors[10] = { RED, BLUE, GREEN, YELLOW, ORANGE, PURPLE, BROWN, WHITE, GRAY, MAGENTA };
     for (int i = 0; i < input.touchCount; ++i)
     {

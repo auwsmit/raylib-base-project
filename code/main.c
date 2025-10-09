@@ -44,7 +44,7 @@ int main(void)
     // ----------------------------------------------------------------------------
     CreateNewWindow();
     InitAudioDevice();
-    InitDefaultInputControls();
+    InitDefaultInputSettings();
     InitRaylibLogo();
     InitUiState();   // also allocates memory for menu buttons
     InitGameState(SCREEN_LOGO);

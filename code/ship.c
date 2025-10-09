@@ -29,24 +29,36 @@ void UpdateShip(SpaceShip *ship)
     // Player Input
     // ----------------------------------------------------------------------------
 
+    // Rotate (digital)
+    if (input.player.rotateLeft)
+        ship->angle -= SHIP_TURN_SPEED*game.frameTime;
+    if (input.player.rotateRight)
+        ship->angle += SHIP_TURN_SPEED*game.frameTime;
+
     // Rotate (mouse)
     if (!input.touchMode && input.mouse.moved)
     {
         RotateShipToMouse(ship);
     }
 
-    // Rotate (touch analog stick)
+    // Rotate (analog stick)
+    if (input.gamepad.available)
+    {
+        Vector2 leftStickPos = { input.gamepad.leftStickX, input.gamepad.leftStickY };
+        Vector2 rightStickPos = { input.gamepad.rightStickX, input.gamepad.rightStickY };
+        Vector2 direction = { 0, 0 };
+        if (Vector2Length(leftStickPos) > input.gamepad.leftStickDeadzone)
+            direction = leftStickPos;
+        if (Vector2Length(rightStickPos) > input.gamepad.rightStickDeadzone)
+            direction = rightStickPos;
+        if (Vector2Length(direction) > EPSILON)
+            ship->angle = (float)atan2(direction.y, direction.x)*RAD2DEG + 90;
+    }
     if (ui.stick.isActive)
     {
         Vector2 stickDirection = Vector2Subtract(ui.stick.stickPos, ui.stick.centerPos);
         ship->angle = (float)atan2(stickDirection.y, stickDirection.x)*RAD2DEG + 90;
     }
-
-    // Rotate (keys)
-    if (input.player.rotateLeft)
-        ship->angle -= SHIP_TURN_SPEED*game.frameTime;
-    if (input.player.rotateRight)
-        ship->angle += SHIP_TURN_SPEED*game.frameTime;
 
     // Thrust jet forward
     bool keyInputThrust = !input.player.thrustMouse;
