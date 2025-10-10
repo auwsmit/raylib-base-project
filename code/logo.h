@@ -10,8 +10,11 @@
 // ----------------------------------------------------------------------------
 #define RAYLIB_LOGO_WIDTH 512 // takes multiples of 64
                               // 192 is the minimum size
+                              // ... or just use camera zoom
 #define RAYLIB_LOGO_OUTLINE (RAYLIB_LOGO_WIDTH/16)
 #define RAYLIB_LOGO_FONT_SIZE (RAYLIB_LOGO_WIDTH/8 + RAYLIB_LOGO_OUTLINE)
+#define RAYLIB_LOGO_BACKGROUND BLACK
+#define RAYLIB_LOGO_COLOR RAYWHITE
 
 // Types and Structures
 // ----------------------------------------------------------------------------

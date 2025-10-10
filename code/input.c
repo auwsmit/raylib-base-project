@@ -1,5 +1,5 @@
 // EXPLANATION:
-// Helps handle game input
+// Helps manage and handle game input
 
 #include "input.h"
 #include "raymath.h"
@@ -11,6 +11,7 @@ InputActionMaps inputMaps;
 
 void InitDefaultInputSettings(void)
 {
+    // Setup input defaults
     InputState defaults = {
         // Gamepad settings
         .gamepad.leftStickDeadzone = 0.25f,
@@ -19,19 +20,21 @@ void InitDefaultInputSettings(void)
         .gamepad.rightTriggerDeadzone = -0.9f,
     };
 
-    // Set touch point button ids
+    // Set touch point button ids (might change to bool or remove)
     for (unsigned int i = 0; i < INPUT_MAX_TOUCH_POINTS; i++)
         defaults.touchPoints[i].currentButton = -1;
+
+    input = defaults;
 
     // Setup input action control mapping
     inputMaps = (InputActionMaps){
         // Global controls
         .gamepadButton[INPUT_ACTION_FULLSCREEN] = { GAMEPAD_BUTTON_SELECT },
         .key[INPUT_ACTION_FULLSCREEN] = {
-            KEY_LEFT_ALT, KEY_ENTER,
-            KEY_RIGHT_ALT, KEY_ENTER,
-            KEY_LEFT_SHIFT, KEY_F,
-            KEY_RIGHT_SHIFT, KEY_F,
+            KEY_LEFT_ALT, KEY_ENTER,  // alt+enter
+            KEY_RIGHT_ALT, KEY_ENTER, // ^ ^ ^ ^ ^
+            KEY_LEFT_SHIFT, KEY_F,  // shift+f
+            KEY_RIGHT_SHIFT, KEY_F, // ^ ^ ^ ^
             KEY_F11,
         },
         .key[INPUT_ACTION_DEBUG] = { KEY_F3 },
@@ -56,7 +59,7 @@ void InitDefaultInputSettings(void)
         .gamepadButton[INPUT_ACTION_SHOOT] =  { GAMEPAD_BUTTON_WEST, GAMEPAD_BUTTON_R1 },
         .gamepadAxis[INPUT_ACTION_THRUST] =   { GAMEPAD_AXIS_LEFT_TRIGGER, INPUT_TRIGGER_BUTTON_DEADZONE },
         .gamepadAxis[INPUT_ACTION_SHOOT] =    { GAMEPAD_AXIS_RIGHT_TRIGGER, INPUT_TRIGGER_BUTTON_DEADZONE },
-        .key[INPUT_ACTION_PAUSE] =           { KEY_P },
+        .key[INPUT_ACTION_PAUSE] =  { KEY_P },
         .key[INPUT_ACTION_LEFT] =   { KEY_A, KEY_LEFT, },
         .key[INPUT_ACTION_RIGHT] =  { KEY_D, KEY_RIGHT, },
         .key[INPUT_ACTION_THRUST] = { KEY_W, KEY_UP, },
@@ -64,13 +67,15 @@ void InitDefaultInputSettings(void)
         .mouse[INPUT_ACTION_THRUST] = { MOUSE_RIGHT_BUTTON },
         .mouse[INPUT_ACTION_SHOOT] =  { INPUT_MOUSE_LEFT_BUTTON },
     };
-
-    input = defaults;
 }
 
 void ProcessUserInput(void)
 {
-    input.anyKeyPressed = (GetKeyPressed() != 0);
+    KeyboardKey currentKey = GetKeyPressed();
+    if (IsInputKeyModifier(currentKey))
+        input.anyKeyPressed = false;
+    else
+        input.anyKeyPressed = (currentKey != 0);
 
     // Check input mappings
     input.global.fullscreen =  IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
@@ -116,7 +121,7 @@ void ProcessUserInput(void)
         input.gamepad.leftTrigger = GetGamepadAxisMovement(input.gamepadId, GAMEPAD_AXIS_LEFT_TRIGGER);
         input.gamepad.rightTrigger = GetGamepadAxisMovement(input.gamepadId, GAMEPAD_AXIS_RIGHT_TRIGGER);
 
-        for (int i = 0; i < INPUT_ACTIONS_COUNT; i++)
+        for (int i = 0; i < INPUT_MAX_ACTIONS; i++)
         {
             if (inputMaps.gamepadAxis[i].axis == 0)
                 continue;
@@ -124,6 +129,7 @@ void ProcessUserInput(void)
             input.gamepadAxisPressedCurrentFrame[i] = IsInputActionAxisDown(i);
         }
     }
+    else input.anyGamepadButtonPressed = false;
 
     input.anyInputPressed = (input.mouse.tapped || input.anyGamepadButtonPressed || input.anyKeyPressed);
 
@@ -172,6 +178,9 @@ void CancelUserInput(void)
     input.global = (InputActionsGlobal){ 0 };
     input.menu = (InputActionsMenu){ 0 };
     input.player = (InputActionsPlayer){ 0 };
+    input.anyKeyPressed = false;
+    input.anyGamepadButtonPressed = false;
+    input.anyInputPressed = false;
 }
 
 // Input Actions
@@ -382,14 +391,14 @@ bool IsTouchPointTapped(int index)
             !input.touchPoints[index].pressedPreviousFrame);
 }
 
-bool IsTouchingButton(int index, int buttonId)
-{
-    return input.touchPoints[index].currentButton != buttonId;
-}
+// bool IsTouchingButton(int index, int buttonId)
+// {
+//     return input.touchPoints[index].currentButton == buttonId;
+// }
 
 bool IsTouchingAnyButton(int index)
 {
-    return IsTouchingButton(index, -1);
+    return input.touchPoints[index].currentButton != -1;
 }
 
 int CheckCollisionTouchCircle(Vector2 center, float radius)

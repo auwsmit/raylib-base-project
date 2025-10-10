@@ -151,43 +151,45 @@ void DrawRaylibLogo(void)
     int rightHeight = (int)raylibLogo.rightSideRecHeight;
     int bottomWidth = (int)raylibLogo.bottomSideRecWidth;
 
+    ClearBackground(RAYLIB_LOGO_BACKGROUND);
+
     if (raylibLogo.state != LOGO_PAUSE)
         DrawText("powered by",
                  (int)((VIRTUAL_WIDTH/2) - (RAYLIB_LOGO_WIDTH/2)),
                  (int)((VIRTUAL_HEIGHT/2) - (RAYLIB_LOGO_WIDTH/2) - offsetB - lineWidth/4),
-                 (int)(fontSize/2), RAYWHITE);
+                 (int)(fontSize/2), RAYLIB_LOGO_COLOR);
 
     switch (raylibLogo.state)
     {
         case LOGO_START:
             if (((int)(raylibLogo.elapsedTime*4)) % 2)
-                DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, RAYWHITE);
+                DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, RAYLIB_LOGO_COLOR);
             else
-                DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, BLACK);
+                DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, RAYLIB_LOGO_BACKGROUND);
             break;
         case LOGO_GROW1:
-            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYWHITE);
-            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, RAYWHITE);
+            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, RAYLIB_LOGO_COLOR);
             break;
         case LOGO_GROW2:
-            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYWHITE);
-            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, RAYWHITE);
+            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, RAYLIB_LOGO_COLOR);
 
-            DrawRectangle(rectPosX + offsetA, rectPosY, lineWidth, rightHeight, RAYWHITE);
-            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, RAYWHITE);
+            DrawRectangle(rectPosX + offsetA, rectPosY, lineWidth, rightHeight, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, RAYLIB_LOGO_COLOR);
             break;
         case LOGO_TEXT:
-            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYWHITE);
-            DrawRectangle(rectPosX, rectPosY + lineWidth, lineWidth, leftHeight - offsetB, RAYWHITE);
+            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY + lineWidth, lineWidth, leftHeight - offsetB, RAYLIB_LOGO_COLOR);
 
-            DrawRectangle(rectPosX + offsetA, rectPosY + lineWidth, lineWidth, rightHeight - offsetB, RAYWHITE);
-            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, RAYWHITE);
+            DrawRectangle(rectPosX + offsetA, rectPosY + lineWidth, lineWidth, rightHeight - offsetB, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, RAYLIB_LOGO_COLOR);
 
             DrawText(TextSubtext("raylib", 0, raylibLogo.lettersCount),
                      VIRTUAL_WIDTH/2 - offsetC, VIRTUAL_HEIGHT/2 + offsetD,
-                     fontSize, RAYWHITE);
+                     fontSize, RAYLIB_LOGO_COLOR);
 
-            DrawRectangle(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, Fade(BLACK, raylibLogo.alpha));
+            DrawRectangle(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, Fade(RAYLIB_LOGO_BACKGROUND, raylibLogo.alpha));
             break;
         case LOGO_PAUSE:
             break;

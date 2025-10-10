@@ -105,9 +105,6 @@ void UpdateDrawFrame(void)
 
     // Global updates
     game.frameTime = GetFrameTime();
-    // input.gamepad = CheckAvailableGamepads();
-    // TraceLog(LOG_INFO, TextFormat("touch count: %i\ntouch mode: %i", game.touchCount, game.touchMode));
-
     ProcessUserInput();
     HandleToggleFullscreen();
     UpdateCameraViewport();

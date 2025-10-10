@@ -108,7 +108,6 @@ void FreeUiState(void); // Frees memory for all menu buttons
 void UpdateUiFrame(void); // Updates the menu for the current frame
 void UpdateUiMenuTraverse(void); // Updates the cursor for movement by user input
 // void UpdateUiButtonMouseHover(UiButton *button); // Draw cursor when mouse is over button
-//                                                  // Disabled+Unused
 void UpdateUiButtonSelect(UiButton *button); // Selects a button by user input
 void UpdateUiTouchInput(UiButton *button); // Updates virtual input from button
 void UpdateUiAnalogStick(UiAnalogStick *stick);

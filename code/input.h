@@ -1,5 +1,5 @@
 // EXPLANATION:
-// Helps handle game input
+// Helps manage and handle game input
 
 #ifndef ASTEROIDS_INPUT_HEADER_GUARD
 #define ASTEROIDS_INPUT_HEADER_GUARD
@@ -8,7 +8,7 @@
 
 // Macros
 // ----------------------------------------------------------------------------
-#define INPUT_ACTIONS_COUNT 16 // Maximum number of game actions, e.g. confirm, pause, move up
+#define INPUT_MAX_ACTIONS 16 // Maximum number of game actions, e.g. confirm, pause, move up
 #define INPUT_MAX_MAPS 24 // Maximum number of inputs that can be mapped to an action
 #define INPUT_MAX_TOUCH_POINTS 8
 #define INPUT_ANALOG_MENU_DEADZONE 0.5f // Deadzone used for analog stick menu movement
@@ -40,7 +40,7 @@
 // ----------------------------------------------------------------------------
 typedef enum InputAction {
     // global
-    INPUT_ACTION_FULLSCREEN = 1,
+    INPUT_ACTION_FULLSCREEN,
     INPUT_ACTION_DEBUG,
 
     // menu
@@ -49,10 +49,8 @@ typedef enum InputAction {
     INPUT_ACTION_MENU_UP,
     INPUT_ACTION_MENU_DOWN,
 
-    // in-game
-    INPUT_ACTION_PAUSE,
-
     // player
+    INPUT_ACTION_PAUSE,
     INPUT_ACTION_LEFT,
     INPUT_ACTION_RIGHT,
     INPUT_ACTION_THRUST,
@@ -60,7 +58,6 @@ typedef enum InputAction {
 } InputAction;
 
 typedef struct InputActionsGlobal {
-    // global
     bool fullscreen;
     bool debug;
 } InputActionsGlobal;
@@ -124,31 +121,32 @@ typedef struct GamepadAxisMap {
 } GamepadAxisMap;
 
 typedef struct InputActionMaps {
-    KeyboardKey key[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    MouseButton mouse[INPUT_ACTIONS_COUNT][4];
-    GamepadButton gamepadButton[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    GamepadAxisMap gamepadAxis[INPUT_ACTIONS_COUNT];
+    KeyboardKey key[INPUT_MAX_ACTIONS][INPUT_MAX_MAPS];
+    MouseButton mouse[INPUT_MAX_ACTIONS][4];
+    GamepadButton gamepadButton[INPUT_MAX_ACTIONS][INPUT_MAX_MAPS];
+    GamepadAxisMap gamepadAxis[INPUT_MAX_ACTIONS];
 } InputActionMaps;
 
+// Tracks input data for the current frame
 typedef struct InputState {
-    // tracks input actions for current frame
+    // bools for input actions
+    // e.g. if (input.global.fullscreen) ToggleFullscreen();
     InputActionsGlobal global;
     InputActionsMenu menu;
     InputActionsPlayer player;
 
-    // generic input info
+    // generic input data
     InputMouseState mouse;
     InputGamepadState gamepad;
     TouchPoint touchPoints[INPUT_MAX_TOUCH_POINTS];
-
     int gamepadId;
     int gamepadButtonPressed;
     int touchCount;
     bool touchMode; // enabled when touch points are detected, disabled by any non-touch input
-    bool touchButtonDown[INPUT_ACTIONS_COUNT];
-    bool touchButtonPressed[INPUT_ACTIONS_COUNT];
-    bool gamepadAxisPressedCurrentFrame[INPUT_ACTIONS_COUNT]; // for when an axis is mapped as a button
-    bool gamepadAxisPressedPreviousFrame[INPUT_ACTIONS_COUNT];
+    bool touchButtonDown[INPUT_MAX_ACTIONS];
+    bool touchButtonPressed[INPUT_MAX_ACTIONS];
+    bool gamepadAxisPressedCurrentFrame[INPUT_MAX_ACTIONS]; // for when an axis is mapped as a button
+    bool gamepadAxisPressedPreviousFrame[INPUT_MAX_ACTIONS];
     bool anyGamepadButtonPressed;
     bool anyKeyPressed;
     bool anyInputPressed;
@@ -178,8 +176,8 @@ bool IsInputActionMousePressed(InputAction action);
 void SetTouchInputAction(InputAction action, bool isButtonPressed);
 void SetTouchPointButton(int index, int buttonIdx); // Set a touch point's current button id (currently used for touch screen analog stick, which probably needs a redesign/rewrite)
 bool IsTouchPointTapped(int index); // Check if a touch point was tapped (works like IsKeyPressed)
-bool IsTouchingButton(int index, int buttonId); // Check if a touch point is pressing a specific button
-bool IsTouchingAnyButton(int index); // Check if a touch point is pressing any button
+// bool IsTouchingButton(int index, int buttonId); // Check if a touch point is on a specific button
+bool IsTouchingAnyButton(int index); // Check if a touch point is on any button
 int CheckCollisionTouchCircle(Vector2 center, float radius); // Check if any touch points are within a circle, returns index to touch point or -1
 int CheckCollisionTouchRec(Rectangle rec); // Check if any touch points are within a rectangle, returns index to touch point or -1
 
