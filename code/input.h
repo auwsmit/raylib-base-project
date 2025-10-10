@@ -11,33 +11,36 @@
 #define INPUT_ACTIONS_COUNT 16 // Maximum number of game actions, e.g. confirm, pause, move up
 #define INPUT_MAX_MAPS 24 // Maximum number of inputs that can be mapped to an action
 #define INPUT_MAX_TOUCH_POINTS 8
+#define INPUT_ANALOG_MENU_DEADZONE 0.5f // Deadzone used for analog stick menu movement
+#define INPUT_TRIGGER_BUTTON_DEADZONE 0.25f // Deadzone used when trigger is used as a button
 
-// These are needed because MOUSE_LEFT_BUTTON is 0, which is the default null mapping value
+// These are needed because MOUSE_LEFT_BUTTON is 0, which is the default non-mapped value
 #define INPUT_MOUSE_LEFT_BUTTON 7
-#define INPUT_MOUSE_NULL 8
+// Same as above, but for GAMEPAD_AXIS_LEFT_X
+#define INPUT_GAMEPAD_AXIS_LEFT_X 6
 
 // Aliases (just a personal preference)
-#define INPUT_FACE_TOP      GAMEPAD_BUTTON_RIGHT_FACE_UP
-#define INPUT_FACE_BOTTOM   GAMEPAD_BUTTON_RIGHT_FACE_DOWN
-#define INPUT_FACE_RIGHT    GAMEPAD_BUTTON_RIGHT_FACE_RIGHT
-#define INPUT_FACE_LEFT     GAMEPAD_BUTTON_RIGHT_FACE_LEFT
-#define INPUT_BUTTON_START  GAMEPAD_BUTTON_MIDDLE_RIGHT
-#define INPUT_BUTTON_SELECT GAMEPAD_BUTTON_MIDDLE_LEFT
-#define INPUT_BUTTON_HOME   GAMEPAD_BUTTON_MIDDLE
-#define INPUT_BUTTON_L1     GAMEPAD_BUTTON_LEFT_TRIGGER_1
-#define INPUT_BUTTON_L2     GAMEPAD_BUTTON_LEFT_TRIGGER_2
-#define INPUT_BUTTON_R1     GAMEPAD_BUTTON_RIGHT_TRIGGER_1
-#define INPUT_BUTTON_R2     GAMEPAD_BUTTON_RIGHT_TRIGGER_2
-#define INPUT_DPAD_UP       GAMEPAD_BUTTON_LEFT_FACE_UP
-#define INPUT_DPAD_DOWN     GAMEPAD_BUTTON_LEFT_FACE_DOWN
-#define INPUT_DPAD_LEFT     GAMEPAD_BUTTON_LEFT_FACE_LEFT
-#define INPUT_DPAD_RIGHT    GAMEPAD_BUTTON_LEFT_FACE_RIGHT
+#define GAMEPAD_BUTTON_NORTH  GAMEPAD_BUTTON_RIGHT_FACE_UP
+#define GAMEPAD_BUTTON_SOUTH  GAMEPAD_BUTTON_RIGHT_FACE_DOWN
+#define GAMEPAD_BUTTON_EAST   GAMEPAD_BUTTON_RIGHT_FACE_RIGHT
+#define GAMEPAD_BUTTON_WEST   GAMEPAD_BUTTON_RIGHT_FACE_LEFT
+#define GAMEPAD_BUTTON_START  GAMEPAD_BUTTON_MIDDLE_RIGHT
+#define GAMEPAD_BUTTON_SELECT GAMEPAD_BUTTON_MIDDLE_LEFT
+#define GAMEPAD_BUTTON_HOME   GAMEPAD_BUTTON_MIDDLE
+#define GAMEPAD_BUTTON_L1     GAMEPAD_BUTTON_LEFT_TRIGGER_1
+#define GAMEPAD_BUTTON_L2     GAMEPAD_BUTTON_LEFT_TRIGGER_2
+#define GAMEPAD_BUTTON_R1     GAMEPAD_BUTTON_RIGHT_TRIGGER_1
+#define GAMEPAD_BUTTON_R2     GAMEPAD_BUTTON_RIGHT_TRIGGER_2
+#define GAMEPAD_DPAD_UP       GAMEPAD_BUTTON_LEFT_FACE_UP
+#define GAMEPAD_DPAD_DOWN     GAMEPAD_BUTTON_LEFT_FACE_DOWN
+#define GAMEPAD_DPAD_LEFT     GAMEPAD_BUTTON_LEFT_FACE_LEFT
+#define GAMEPAD_DPAD_RIGHT    GAMEPAD_BUTTON_LEFT_FACE_RIGHT
 
 // Types and Structures
 // ----------------------------------------------------------------------------
 typedef enum InputAction {
     // global
-    INPUT_ACTION_FULLSCREEN,
+    INPUT_ACTION_FULLSCREEN = 1,
     INPUT_ACTION_DEBUG,
 
     // menu
@@ -115,6 +118,12 @@ typedef struct TouchPoint {
                        // ... actually the touch screen input UI stuff just needs a rewrite
 } TouchPoint;
 
+typedef struct GamepadAxisMap {
+    GamepadAxis axis;
+    float deadzone; // the threshold for axis to be 'pressed down' as a button
+                    // used to map analog stick or trigger as buttons
+} GamepadAxisMap;
+
 typedef struct InputState {
     // tracks input actions for current frame
     InputActionsState actions;
@@ -128,8 +137,10 @@ typedef struct InputState {
     // mappings for input actions
     KeyboardKey keyMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
     MouseButton mouseMaps[INPUT_ACTIONS_COUNT][4];
-    GamepadButton gamepadMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    // GamepadButton gamepadAxisMaps[INPUT_ACTIONS_COUNT][2];
+    GamepadButton gamepadButtonMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
+    GamepadAxisMap gamepadAxisMaps[INPUT_ACTIONS_COUNT];
+    bool gamepadAxisPressedCurrentFrame[INPUT_ACTIONS_COUNT]; // for when an axis is mapped as a button
+    bool gamepadAxisPressedPreviousFrame[INPUT_ACTIONS_COUNT];
 
     bool touchButtonDown[INPUT_ACTIONS_COUNT]; // for touch screen input buttons
     bool touchButtonPressed[INPUT_ACTIONS_COUNT];
@@ -155,10 +166,12 @@ void CancelUserInput(void); // Cancel all user inputs for the current frame
 
 // Input Actions
 bool IsInputKeyModifier(KeyboardKey key);
-bool IsInputActionPressed(InputAction action);
-bool IsInputActionMousePressed(InputAction action);
 bool IsInputActionDown(InputAction action);
+bool IsInputActionAxisDown(InputAction action);
 bool IsInputActionMouseDown(InputAction action);
+bool IsInputActionPressed(InputAction action);
+bool IsInputActionAxisPressed(InputAction action);
+bool IsInputActionMousePressed(InputAction action);
 
 // Touch / Virtual Input
 void SetTouchInputAction(InputAction action, bool isButtonPressed);

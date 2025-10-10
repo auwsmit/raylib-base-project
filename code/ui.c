@@ -209,11 +209,10 @@ void UpdateUiMenuTraverse(void)
         }
     }
 
-    // Move cursor via keyboard
+    // Move cursor via input actions
+    const float rapidFireIntervalTime = 0.6f;
     bool isInputUp = input.actions.moveUp;
     bool isInputDown = input.actions.moveDown;
-    const float autoScrollInitPause = 0.6f;
-
     bool initialKeyPress = (!ui.autoScroll && ui.keyHeldTime == 0);
     bool heldLongEnoughToRepeat = (ui.autoScroll && ui.keyHeldTime >= 0.1f);
     if (initialKeyPress || heldLongEnoughToRepeat)
@@ -242,7 +241,7 @@ void UpdateUiMenuTraverse(void)
     if (isInputUp || isInputDown)
     {
         ui.keyHeldTime += game.frameTime;
-        if (ui.keyHeldTime >= autoScrollInitPause)
+        if (ui.keyHeldTime >= rapidFireIntervalTime)
         {
             ui.autoScroll = true;
         }
