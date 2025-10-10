@@ -10,7 +10,7 @@
 // ----------------------------------------------------------------------------
 
 #define UI_BUTTON_PADDING 20 // area around text to click
-#define UI_TRANSPARENCY 0.10f
+#define UI_TRANSPARENCY 0.10f // only used for touch input buttons
 
 // Size of UI elements
 #define UI_TITLE_SIZE        150   // title font size
@@ -36,7 +36,7 @@ typedef enum UiMenuState {
 } UiMenuState;
 
 typedef enum UiTitleMenuId {
-    UI_BID_START, UI_BID_EXIT
+    UI_BID_START, UI_BID_TITLE_EXIT
 } UiTitleMenuId;
 
 typedef enum UiGameplayButtonId {
@@ -44,7 +44,7 @@ typedef enum UiGameplayButtonId {
 } UiGameplayButtonId;
 
 typedef enum UiPauseMenuId {
-    UI_BID_RESUME, UI_BID_BACKTOTITLE
+    UI_BID_RESUME, UI_BID_BACKTOTITLE, UI_BID_PAUSE_EXIT
 } UiPauseMenuId;
 
 typedef struct UiButton {
@@ -71,14 +71,19 @@ typedef struct UiMenu {
     unsigned int buttonCount;
 } UiMenu;
 
+// Virtual touchscreen input buttons
+typedef struct UiGamepad {
+    UiButton pause;
+    UiButton shoot;
+    UiButton fly;
+    UiAnalogStick stick;
+} UiGamepad;
+
 // Holds data for the title screen menu
 typedef struct UiState {
+    UiGamepad gamepad;
     UiButton title[2]; // Title text
-    UiButton *buttons; // non-menu buttons
-    UiButton pause;
-    UiButton shoot; // virtual input button
-    UiButton fly;   // virtual input button
-    UiAnalogStick stick;  // virtual analog stick
+    // UiButton *buttons; // non-menu buttons
     UiMenu menus[3]; // title, difficulty, and pause menus
     float keyHeldTime;
     float textFade;            // tracks fade value over time

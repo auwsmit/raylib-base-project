@@ -24,10 +24,11 @@ void InitUiState(void)
         .firstFrame = true,
     };
 
+    // Title menu
+    // ----------------------------------------------------------------------------
     defaults.title[0] = InitUiTitle("Asteroids");
     defaults.title[1] = InitUiTitle("Remake");
 
-    // Title menu buttons
     UiMenu *titleMenu = &defaults.menus[UI_MENU_TITLE];
 
     float startPosX = VIRTUAL_WIDTH/2 - (float)MeasureText("Start", UI_TITLE_BUTTON_SIZE)/2;
@@ -39,38 +40,46 @@ void InitUiState(void)
 #endif
 
     // Pause menu
+    // ----------------------------------------------------------------------------
     UiMenu *pauseMenu = &defaults.menus[UI_MENU_PAUSE];
     int resumeTextLength = MeasureText("Resume", UI_FONT_SIZE_EDGE);
     float resumePosX = (float)(VIRTUAL_WIDTH - resumeTextLength)/2;
-    float resumePosY = (float)VIRTUAL_HEIGHT/2 + UI_FONT_SIZE_EDGE + UI_BUTTON_SPACING*2;
+    float resumePosY = (float)VIRTUAL_HEIGHT/3 + UI_FONT_SIZE_EDGE + UI_BUTTON_SPACING*2;
     CreateUiMenuButton("Resume", pauseMenu, resumePosX, resumePosY, UI_FONT_SIZE_EDGE);
     CreateUiMenuButtonRelative("Back to Title", pauseMenu, UI_BUTTON_SPACING, UI_FONT_SIZE_EDGE);
+#if !defined(PLATFORM_WEB)
+    CreateUiMenuButtonRelative("Exit Game", pauseMenu, UI_BUTTON_SPACING, UI_FONT_SIZE_EDGE);
+#endif
+
+    // Touch input buttons (virtual gamepad)
+    // ----------------------------------------------------------------------------
+    const int touchInputPadding = UI_EDGE_PADDING*2;
 
     // Pause button
-    int pauseTextLength = MeasureText("Pause", UI_FONT_SIZE_EDGE);
-    float pausePosX = (float)(VIRTUAL_WIDTH - pauseTextLength)/2;
-    float pausePosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    defaults.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_FONT_SIZE_EDGE);
+    int pauseTextLength = MeasureText("Pause", UI_FONT_SIZE_EDGE*0.75f);
+    float pausePosX = (float)(VIRTUAL_WIDTH - pauseTextLength)/2.5f;
+    float pausePosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
+    defaults.gamepad.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_FONT_SIZE_EDGE*0.75f);
 
-    // Virtual thrust button
+    // Thrust button
     int flyTextLength = MeasureText("Thrust", UI_FONT_SIZE_EDGE);
-    float flyPosX = (float)(VIRTUAL_WIDTH - flyTextLength - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    float flyPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    defaults.fly = InitUiButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_FONT_SIZE_EDGE);
+    float flyPosX = (float)(VIRTUAL_WIDTH - flyTextLength - touchInputPadding - UI_BUTTON_PADDING);
+    float flyPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
+    defaults.gamepad.fly = InitUiButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_FONT_SIZE_EDGE);
 
-    // Virtual shoot button
+    // Shoot button
     int shootTextLength = MeasureText("Shoot", UI_FONT_SIZE_EDGE);
-    float shootPosX = (float)(flyPosX - shootTextLength - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    float shootPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - UI_EDGE_PADDING - UI_BUTTON_PADDING);
-    defaults.shoot = InitUiButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_FONT_SIZE_EDGE);
+    float shootPosX = (float)(flyPosX - shootTextLength - touchInputPadding - UI_BUTTON_PADDING);
+    float shootPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
+    defaults.gamepad.shoot = InitUiButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_FONT_SIZE_EDGE);
 
-    // Virtual analog stick
-    defaults.stick.centerPos.x = UI_STICK_RADIUS + UI_EDGE_PADDING;
-    defaults.stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - UI_EDGE_PADDING;
-    defaults.stick.stickPos = defaults.stick.centerPos;
-    defaults.stick.centerRadius = UI_STICK_RADIUS;
-    defaults.stick.stickRadius = UI_STICK_RADIUS/2;
-    defaults.stick.lastTouchId = -1;
+    // Analog stick
+    defaults.gamepad.stick.centerPos.x = UI_STICK_RADIUS + touchInputPadding;
+    defaults.gamepad.stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - touchInputPadding;
+    defaults.gamepad.stick.stickPos = defaults.gamepad.stick.centerPos;
+    defaults.gamepad.stick.centerRadius = UI_STICK_RADIUS;
+    defaults.gamepad.stick.stickRadius = UI_STICK_RADIUS/2;
+    defaults.gamepad.stick.lastTouchId = -1;
 
     ui = defaults;
 }
@@ -159,14 +168,6 @@ void UpdateUiFrame(void)
         UiButton *selectedButton = &ui.menus[ui.currentMenu].buttons[ui.selectedId];
         UpdateUiButtonSelect(selectedButton);
         UpdateUiMenuTraverse();
-    }
-
-    // Update in-game UI buttons
-    // (touch virtual controls are separate, see UpdateUiTouchButton())
-    else if (!game.isPaused && input.touchMode)
-    {
-        // Pause button
-        UpdateUiButtonSelect(&ui.pause);
     }
 
     // Update text fade animation
@@ -282,28 +283,28 @@ void UpdateUiButtonSelect(UiButton *button)
 {
     int touchIdx = IsTouchWithinUiButton(button);
 
-    // Select pause button
     bool buttonTapped = ((touchIdx != -1) && IsTouchPointTapped(touchIdx));
     bool buttonClicked = (input.mouse.leftPressed && IsMouseWithinUiButton(button));
     if (!buttonTapped && !buttonClicked)
         button->clicked = false;
 
-    if (ui.currentMenu == UI_MENU_NONE && (buttonTapped || buttonClicked))
-    {
-        if (button->buttonId == UI_BID_PAUSE)
-        {
-            ChangeUiMenu(UI_MENU_PAUSE);
-            PlaySound(game.sounds.menu);
-            button->clicked = true;
-        }
-    }
+    // Select pause button
+    // if (ui.currentMenu == UI_MENU_NONE && (buttonTapped || buttonClicked))
+    // {
+    //     if (button->buttonId == UI_BID_PAUSE)
+    //     {
+    //         ChangeUiMenu(UI_MENU_PAUSE);
+    //         PlaySound(game.sounds.menu);
+    //         button->clicked = true;
+    //     }
+    // }
 
     // else if (input.menu.confirm ||
     //     (IsGestureDetected(GESTURE_TAP) &&
     //      (!IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && IsMouseWithinUiButton(button))))
 
     // Select a menu button
-    else if (input.menu.confirm || buttonTapped || buttonClicked)
+    if (input.menu.confirm || buttonTapped || buttonClicked)
     {
         if (ui.currentMenu == UI_MENU_NONE && !game.isPaused)
             return; // not a menu
@@ -320,11 +321,13 @@ void UpdateUiButtonSelect(UiButton *button)
             {
                 ChangeUiMenu(UI_MENU_TITLE);
             }
+            else if (ui.selectedId == UI_BID_PAUSE_EXIT)
+                game.gameShouldExit = true;
         }
 
         else if (ui.currentMenu == UI_MENU_TITLE)
         {
-            if (ui.selectedId == UI_BID_EXIT)
+            if (ui.selectedId == UI_BID_TITLE_EXIT)
                 game.gameShouldExit = true;
             else if (ui.selectedId == UI_BID_START)
                 ChangeUiMenu(UI_MENU_NONE);
@@ -337,7 +340,9 @@ void UpdateUiButtonSelect(UiButton *button)
 void UpdateUiTouchInput(UiButton *button)
 {
     InputAction buttonInputAction;
-    if (button->buttonId == UI_BID_SHOOT)
+    if (button->buttonId == UI_BID_PAUSE)
+        buttonInputAction = INPUT_ACTION_PAUSE;
+    else if (button->buttonId == UI_BID_SHOOT)
         buttonInputAction = INPUT_ACTION_SHOOT;
     else if (button->buttonId == UI_BID_THRUST)
         buttonInputAction = INPUT_ACTION_THRUST;
@@ -406,6 +411,8 @@ void ChangeUiMenu(UiMenuState newMenu)
     {
         game.isPaused = true;
         ui.selectedId = UI_BID_RESUME;
+        // ui.gamepad.pause.clicked = false;
+        // input.player.pause = false;
         // ui.pause.mouseHovered = false;
     }
 
@@ -464,6 +471,15 @@ void DrawUiFrame(void)
             DrawUiElement(&ui.title[i]);
     }
 
+    if (game.isPaused)
+    {
+        char *text = "PAUSED";
+        int textOffset = MeasureText(text, UI_FONT_SIZE_CENTER)/2;
+        DrawText(text, VIRTUAL_WIDTH/2 - textOffset,
+                 VIRTUAL_HEIGHT/3 - UI_FONT_SIZE_CENTER/2,
+                 UI_FONT_SIZE_CENTER, Fade(RAYWHITE, ui.textFade));
+    }
+
     // Draw menus and buttons
     // ----------------------------------------------------------------------------
     if (ui.currentMenu != UI_MENU_NONE) // Draw non-gameplay menu
@@ -478,19 +494,19 @@ void DrawUiFrame(void)
     else if (game.currentScreen == SCREEN_GAMEPLAY && input.touchMode) // Touch controls
     {
         // Draw pause button
-        DrawUiOutline(&ui.pause);
-        DrawUiElement(&ui.pause);
+        DrawUiOutline(&ui.gamepad.pause);
+        DrawUiElement(&ui.gamepad.pause);
 
         // Draw fly input button
-        DrawUiOutline(&ui.fly);
-        DrawUiElement(&ui.fly);
+        DrawUiOutline(&ui.gamepad.fly);
+        DrawUiElement(&ui.gamepad.fly);
 
         // Draw fly input button
-        DrawUiOutline(&ui.shoot);
-        DrawUiElement(&ui.shoot);
+        DrawUiOutline(&ui.gamepad.shoot);
+        DrawUiElement(&ui.gamepad.shoot);
 
         // Draw analog stick
-        DrawUiAnalogStick(&ui.stick);
+        DrawUiAnalogStick(&ui.gamepad.stick);
     }
 
     // Gameplay UI
@@ -653,8 +669,7 @@ void DrawCenterText(void)
 
     if (game.isPaused)
     {
-        text = "PAUSED";
-        centerText = true;
+        centerText = false;
     }
     else if (game.lives <= 0)
     {

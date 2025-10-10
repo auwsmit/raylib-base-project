@@ -54,16 +54,16 @@ void UpdateShip(SpaceShip *ship)
         if (Vector2Length(direction) > EPSILON)
             ship->angle = (float)atan2(direction.y, direction.x)*RAD2DEG + 90;
     }
-    if (ui.stick.isActive)
+    if (ui.gamepad.stick.isActive)
     {
-        Vector2 stickDirection = Vector2Subtract(ui.stick.stickPos, ui.stick.centerPos);
+        Vector2 stickDirection = Vector2Subtract(ui.gamepad.stick.stickPos, ui.gamepad.stick.centerPos);
         ship->angle = (float)atan2(stickDirection.y, stickDirection.x)*RAD2DEG + 90;
     }
 
     // Thrust jet forward
     bool keyInputThrust = !input.player.thrustMouse;
     bool mouseInputThrust = (!input.touchMode && !keyInputThrust);
-    bool touchInputThrust = (input.touchMode && ui.fly.clicked);
+    bool touchInputThrust = (input.touchMode && ui.gamepad.fly.clicked);
     if ((input.player.thrust && game.resumeInputCooldown == false) &&
         (keyInputThrust || mouseInputThrust || touchInputThrust))
     {
@@ -83,7 +83,7 @@ void UpdateShip(SpaceShip *ship)
     // Shoot missile
     bool keyInputShoot = !input.player.shootMouse;
     bool mouseInputShoot = (!input.touchMode && !keyInputShoot);
-    bool touchInputShoot = (input.touchMode && ui.shoot.clicked);
+    bool touchInputShoot = (input.touchMode && ui.gamepad.shoot.clicked);
     if ((input.player.shoot && game.resumeInputCooldown == false) &&
         (keyInputShoot || mouseInputShoot || touchInputShoot))
     {

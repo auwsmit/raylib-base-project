@@ -77,27 +77,6 @@ void ProcessUserInput(void)
     else
         input.anyKeyPressed = (currentKey != 0);
 
-    // Check input mappings
-    input.global.fullscreen =  IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
-    input.global.debug =       IsInputActionPressed(INPUT_ACTION_DEBUG);
-    if (ui.currentMenu != UI_MENU_NONE)
-    {
-        input.menu.confirm =     IsInputActionPressed(INPUT_ACTION_CONFIRM);
-        input.menu.cancel =      IsInputActionPressed(INPUT_ACTION_CANCEL);
-        input.menu.moveUp =      IsInputActionDown(INPUT_ACTION_MENU_UP);
-        input.menu.moveDown =    IsInputActionDown(INPUT_ACTION_MENU_DOWN);
-    }
-    if (game.currentScreen == SCREEN_GAMEPLAY)
-    {
-        input.player.pause =       IsInputActionPressed(INPUT_ACTION_PAUSE);
-        input.player.rotateLeft =  IsInputActionDown(INPUT_ACTION_LEFT);
-        input.player.rotateRight = IsInputActionDown(INPUT_ACTION_RIGHT);
-        input.player.thrust =      IsInputActionDown(INPUT_ACTION_THRUST);
-        input.player.shoot =       IsInputActionDown(INPUT_ACTION_SHOOT);
-        input.player.thrustMouse = IsInputActionMouseDown(INPUT_ACTION_THRUST);
-        input.player.shootMouse =  IsInputActionMouseDown(INPUT_ACTION_SHOOT);
-    }
-
     // Update mouse
     input.mouse.position =     GetScreenToWorld2D(GetMousePosition(), game.camera);
     input.mouse.delta =        GetMouseDelta();
@@ -144,33 +123,56 @@ void ProcessUserInput(void)
     }
     else input.touchMode = true;
 
-    if (!input.touchMode) return;
-
-    // Update touch points
-    if (tCount > INPUT_MAX_TOUCH_POINTS)
-        tCount = INPUT_MAX_TOUCH_POINTS;
-    for (int i = 0; i < tCount; i++)
+    if (input.touchMode)
     {
-        Vector2 touchPosition = GetScreenToWorld2D(GetTouchPosition(i), game.camera);
-        TouchPoint *touchPoint = &input.touchPoints[i];
-        touchPoint->position = touchPosition;
-        touchPoint->pressedPreviousFrame = touchPoint->pressedCurrentFrame;
-        touchPoint->pressedCurrentFrame = true;
-        touchPoint->currentButton = -1;
-        touchPoint->id = GetTouchPointId(i);
-    }
-    for (int i = tCount; i < INPUT_MAX_TOUCH_POINTS; i++)
-        input.touchPoints[i].pressedCurrentFrame = false;
+        // Update touch points
+        if (tCount > INPUT_MAX_TOUCH_POINTS)
+            tCount = INPUT_MAX_TOUCH_POINTS;
+        for (int i = 0; i < tCount; i++)
+        {
+            Vector2 touchPosition = GetScreenToWorld2D(GetTouchPosition(i), game.camera);
+            TouchPoint *touchPoint = &input.touchPoints[i];
+            touchPoint->position = touchPosition;
+            touchPoint->pressedPreviousFrame = touchPoint->pressedCurrentFrame;
+            touchPoint->pressedCurrentFrame = true;
+            touchPoint->currentButton = -1;
+            touchPoint->id = GetTouchPointId(i);
+        }
+        for (int i = tCount; i < INPUT_MAX_TOUCH_POINTS; i++)
+            input.touchPoints[i].pressedCurrentFrame = false;
 
-    // Update touch input buttons
-    ProcessVirtualGamepad();
+        // Update touch input buttons
+        ProcessVirtualGamepad();
+    }
+
+    // Check input mappings
+    input.global.fullscreen =  IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
+    input.global.debug =       IsInputActionPressed(INPUT_ACTION_DEBUG);
+    if (ui.currentMenu != UI_MENU_NONE)
+    {
+        input.menu.confirm =     IsInputActionPressed(INPUT_ACTION_CONFIRM);
+        input.menu.cancel =      IsInputActionPressed(INPUT_ACTION_CANCEL);
+        input.menu.moveUp =      IsInputActionDown(INPUT_ACTION_MENU_UP);
+        input.menu.moveDown =    IsInputActionDown(INPUT_ACTION_MENU_DOWN);
+    }
+    if (game.currentScreen == SCREEN_GAMEPLAY)
+    {
+        input.player.pause =       IsInputActionPressed(INPUT_ACTION_PAUSE);
+        input.player.rotateLeft =  IsInputActionDown(INPUT_ACTION_LEFT);
+        input.player.rotateRight = IsInputActionDown(INPUT_ACTION_RIGHT);
+        input.player.thrust =      IsInputActionDown(INPUT_ACTION_THRUST);
+        input.player.shoot =       IsInputActionDown(INPUT_ACTION_SHOOT);
+        input.player.thrustMouse = IsInputActionMouseDown(INPUT_ACTION_THRUST);
+        input.player.shootMouse =  IsInputActionMouseDown(INPUT_ACTION_SHOOT);
+    }
 }
 
 void ProcessVirtualGamepad(void)
 {
-    UpdateUiTouchInput(&ui.shoot);
-    UpdateUiTouchInput(&ui.fly);
-    UpdateUiAnalogStick(&ui.stick);
+    UpdateUiTouchInput(&ui.gamepad.pause);
+    UpdateUiTouchInput(&ui.gamepad.shoot);
+    UpdateUiTouchInput(&ui.gamepad.fly);
+    UpdateUiAnalogStick(&ui.gamepad.stick);
 }
 
 void CancelUserInput(void)
@@ -375,8 +377,10 @@ bool IsInputActionMousePressed(InputAction action)
 // ----------------------------------------------------------------------------
 void SetTouchInputAction(InputAction action, bool isButtonDown)
 {
-    if (!input.touchButtonDown[action])
+    if (isButtonDown && !input.touchButtonDown[action])
         input.touchButtonPressed[action] = true;
+    else
+        input.touchButtonPressed[action] = false;
     input.touchButtonDown[action] = isButtonDown;
 }
 
