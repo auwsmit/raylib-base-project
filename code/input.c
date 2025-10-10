@@ -7,60 +7,63 @@
 #include "ui.h"
 #include "game.h"
 
+InputActionMaps inputMaps;
+
 void InitDefaultInputSettings(void)
 {
     InputState defaults = {
         // Gamepad settings
-        .gamepad.leftStickDeadzone = 0.1f,
-        .gamepad.rightStickDeadzone = 0.1f,
+        .gamepad.leftStickDeadzone = 0.25f,
+        .gamepad.rightStickDeadzone = 0.25f,
         .gamepad.leftTriggerDeadzone = -0.9f,
         .gamepad.rightTriggerDeadzone = -0.9f,
+    };
 
-        // Global controls (input action mappings)
-        .gamepadButtonMaps[INPUT_ACTION_FULLSCREEN] = { GAMEPAD_BUTTON_SELECT },
-        .keyMaps[INPUT_ACTION_FULLSCREEN] = {
+    // Set touch point button ids
+    for (unsigned int i = 0; i < INPUT_MAX_TOUCH_POINTS; i++)
+        defaults.touchPoints[i].currentButton = -1;
+
+    // Setup input action control mapping
+    inputMaps = (InputActionMaps){
+        // Global controls
+        .gamepadButton[INPUT_ACTION_FULLSCREEN] = { GAMEPAD_BUTTON_SELECT },
+        .key[INPUT_ACTION_FULLSCREEN] = {
             KEY_LEFT_ALT, KEY_ENTER,
             KEY_RIGHT_ALT, KEY_ENTER,
             KEY_LEFT_SHIFT, KEY_F,
             KEY_RIGHT_SHIFT, KEY_F,
             KEY_F11,
         },
-        .keyMaps[INPUT_ACTION_DEBUG] = { KEY_F3 },
+        .key[INPUT_ACTION_DEBUG] = { KEY_F3 },
 
         // Menu controls
-        .gamepadButtonMaps[INPUT_ACTION_CONFIRM] =   { GAMEPAD_BUTTON_SOUTH },
-        .gamepadButtonMaps[INPUT_ACTION_CANCEL] =    { GAMEPAD_BUTTON_EAST },
-        .gamepadButtonMaps[INPUT_ACTION_MENU_UP] =   { GAMEPAD_DPAD_UP },
-        .gamepadButtonMaps[INPUT_ACTION_MENU_DOWN] = { GAMEPAD_DPAD_DOWN },
-        .gamepadAxisMaps[INPUT_ACTION_MENU_UP] =   { GAMEPAD_AXIS_LEFT_Y, -INPUT_ANALOG_MENU_DEADZONE },
-        .gamepadAxisMaps[INPUT_ACTION_MENU_DOWN] = { GAMEPAD_AXIS_LEFT_Y, INPUT_ANALOG_MENU_DEADZONE },
-        .keyMaps[INPUT_ACTION_CONFIRM] =   { KEY_ENTER, KEY_SPACE },
-        .keyMaps[INPUT_ACTION_CANCEL] =    { KEY_ESCAPE, KEY_BACKSPACE, },
-        .keyMaps[INPUT_ACTION_MENU_UP] =   { KEY_W, KEY_UP },
-        .keyMaps[INPUT_ACTION_MENU_DOWN] = { KEY_S, KEY_DOWN },
+        .gamepadButton[INPUT_ACTION_CONFIRM] =   { GAMEPAD_BUTTON_SOUTH },
+        .gamepadButton[INPUT_ACTION_CANCEL] =    { GAMEPAD_BUTTON_EAST },
+        .gamepadButton[INPUT_ACTION_MENU_UP] =   { GAMEPAD_DPAD_UP },
+        .gamepadButton[INPUT_ACTION_MENU_DOWN] = { GAMEPAD_DPAD_DOWN },
+        .gamepadAxis[INPUT_ACTION_MENU_UP] =   { GAMEPAD_AXIS_LEFT_Y, -INPUT_ANALOG_MENU_DEADZONE },
+        .gamepadAxis[INPUT_ACTION_MENU_DOWN] = { GAMEPAD_AXIS_LEFT_Y, INPUT_ANALOG_MENU_DEADZONE },
+        .key[INPUT_ACTION_CONFIRM] =   { KEY_ENTER, KEY_SPACE },
+        .key[INPUT_ACTION_CANCEL] =    { KEY_ESCAPE, KEY_BACKSPACE, },
+        .key[INPUT_ACTION_MENU_UP] =   { KEY_W, KEY_UP },
+        .key[INPUT_ACTION_MENU_DOWN] = { KEY_S, KEY_DOWN },
 
-        // Game controls
-        .gamepadButtonMaps[INPUT_ACTION_PAUSE] = { GAMEPAD_BUTTON_START },
-        .keyMaps[INPUT_ACTION_PAUSE] =           { KEY_P },
-
-        // Player 1 action mappings
-        .gamepadButtonMaps[INPUT_ACTION_LEFT] =   { GAMEPAD_DPAD_LEFT },
-        .gamepadButtonMaps[INPUT_ACTION_RIGHT] =  { GAMEPAD_DPAD_RIGHT },
-        .gamepadButtonMaps[INPUT_ACTION_THRUST] = { GAMEPAD_BUTTON_SOUTH, GAMEPAD_BUTTON_L1 },
-        .gamepadButtonMaps[INPUT_ACTION_SHOOT] =  { GAMEPAD_BUTTON_WEST, GAMEPAD_BUTTON_R1 },
-        .gamepadAxisMaps[INPUT_ACTION_THRUST] =   { GAMEPAD_AXIS_LEFT_TRIGGER, INPUT_TRIGGER_BUTTON_DEADZONE },
-        .gamepadAxisMaps[INPUT_ACTION_SHOOT] =    { GAMEPAD_AXIS_RIGHT_TRIGGER, INPUT_TRIGGER_BUTTON_DEADZONE },
-        .keyMaps[INPUT_ACTION_LEFT] =   { KEY_A, KEY_LEFT, },
-        .keyMaps[INPUT_ACTION_RIGHT] =  { KEY_D, KEY_RIGHT, },
-        .keyMaps[INPUT_ACTION_THRUST] = { KEY_W, KEY_UP, },
-        .keyMaps[INPUT_ACTION_SHOOT] =  { KEY_SPACE },
-        .mouseMaps[INPUT_ACTION_THRUST] = { MOUSE_RIGHT_BUTTON },
-        .mouseMaps[INPUT_ACTION_SHOOT] =  { INPUT_MOUSE_LEFT_BUTTON },
+        // Player 1 controls
+        .gamepadButton[INPUT_ACTION_PAUSE] = { GAMEPAD_BUTTON_START },
+        .gamepadButton[INPUT_ACTION_LEFT] =   { GAMEPAD_DPAD_LEFT },
+        .gamepadButton[INPUT_ACTION_RIGHT] =  { GAMEPAD_DPAD_RIGHT },
+        .gamepadButton[INPUT_ACTION_THRUST] = { GAMEPAD_BUTTON_SOUTH, GAMEPAD_BUTTON_L1 },
+        .gamepadButton[INPUT_ACTION_SHOOT] =  { GAMEPAD_BUTTON_WEST, GAMEPAD_BUTTON_R1 },
+        .gamepadAxis[INPUT_ACTION_THRUST] =   { GAMEPAD_AXIS_LEFT_TRIGGER, INPUT_TRIGGER_BUTTON_DEADZONE },
+        .gamepadAxis[INPUT_ACTION_SHOOT] =    { GAMEPAD_AXIS_RIGHT_TRIGGER, INPUT_TRIGGER_BUTTON_DEADZONE },
+        .key[INPUT_ACTION_PAUSE] =           { KEY_P },
+        .key[INPUT_ACTION_LEFT] =   { KEY_A, KEY_LEFT, },
+        .key[INPUT_ACTION_RIGHT] =  { KEY_D, KEY_RIGHT, },
+        .key[INPUT_ACTION_THRUST] = { KEY_W, KEY_UP, },
+        .key[INPUT_ACTION_SHOOT] =  { KEY_SPACE },
+        .mouse[INPUT_ACTION_THRUST] = { MOUSE_RIGHT_BUTTON },
+        .mouse[INPUT_ACTION_SHOOT] =  { INPUT_MOUSE_LEFT_BUTTON },
     };
-
-    // Set touch point button ids (bad code. only used for touch screen analog stick, needs to be rewritten)
-    for (unsigned int i = 0; i < INPUT_MAX_TOUCH_POINTS; i++)
-        defaults.touchPoints[i].currentButton = -1;
 
     input = defaults;
 }
@@ -70,20 +73,25 @@ void ProcessUserInput(void)
     input.anyKeyPressed = (GetKeyPressed() != 0);
 
     // Check input mappings
-    input.actions.fullscreen =  IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
-    input.actions.debug =       IsInputActionPressed(INPUT_ACTION_DEBUG);
-    input.actions.confirm =     IsInputActionPressed(INPUT_ACTION_CONFIRM);
-    input.actions.cancel =      IsInputActionPressed(INPUT_ACTION_CANCEL);
-    input.actions.moveUp =      IsInputActionDown(INPUT_ACTION_MENU_UP);
-    input.actions.moveDown =    IsInputActionDown(INPUT_ACTION_MENU_DOWN);
-    input.actions.pause =       IsInputActionPressed(INPUT_ACTION_PAUSE);
-
-    input.player.rotateLeft =  IsInputActionDown(INPUT_ACTION_LEFT);
-    input.player.rotateRight = IsInputActionDown(INPUT_ACTION_RIGHT);
-    input.player.thrust =      IsInputActionDown(INPUT_ACTION_THRUST);
-    input.player.shoot =       IsInputActionDown(INPUT_ACTION_SHOOT);
-    input.player.thrustMouse = IsInputActionMouseDown(INPUT_ACTION_THRUST);
-    input.player.shootMouse =  IsInputActionMouseDown(INPUT_ACTION_SHOOT);
+    input.global.fullscreen =  IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
+    input.global.debug =       IsInputActionPressed(INPUT_ACTION_DEBUG);
+    if (ui.currentMenu != UI_MENU_NONE)
+    {
+        input.menu.confirm =     IsInputActionPressed(INPUT_ACTION_CONFIRM);
+        input.menu.cancel =      IsInputActionPressed(INPUT_ACTION_CANCEL);
+        input.menu.moveUp =      IsInputActionDown(INPUT_ACTION_MENU_UP);
+        input.menu.moveDown =    IsInputActionDown(INPUT_ACTION_MENU_DOWN);
+    }
+    if (game.currentScreen == SCREEN_GAMEPLAY)
+    {
+        input.player.pause =       IsInputActionPressed(INPUT_ACTION_PAUSE);
+        input.player.rotateLeft =  IsInputActionDown(INPUT_ACTION_LEFT);
+        input.player.rotateRight = IsInputActionDown(INPUT_ACTION_RIGHT);
+        input.player.thrust =      IsInputActionDown(INPUT_ACTION_THRUST);
+        input.player.shoot =       IsInputActionDown(INPUT_ACTION_SHOOT);
+        input.player.thrustMouse = IsInputActionMouseDown(INPUT_ACTION_THRUST);
+        input.player.shootMouse =  IsInputActionMouseDown(INPUT_ACTION_SHOOT);
+    }
 
     // Update mouse
     input.mouse.position =     GetScreenToWorld2D(GetMousePosition(), game.camera);
@@ -110,7 +118,7 @@ void ProcessUserInput(void)
 
         for (int i = 0; i < INPUT_ACTIONS_COUNT; i++)
         {
-            if (input.gamepadAxisMaps[i].axis == 0)
+            if (inputMaps.gamepadAxis[i].axis == 0)
                 continue;
             input.gamepadAxisPressedPreviousFrame[i] = input.gamepadAxisPressedCurrentFrame[i];
             input.gamepadAxisPressedCurrentFrame[i] = IsInputActionAxisDown(i);
@@ -161,7 +169,8 @@ void ProcessVirtualGamepad(void)
 
 void CancelUserInput(void)
 {
-    input.actions = (InputActionsState){ 0 };
+    input.global = (InputActionsGlobal){ 0 };
+    input.menu = (InputActionsMenu){ 0 };
     input.player = (InputActionsPlayer){ 0 };
 }
 
@@ -185,7 +194,7 @@ bool IsInputActionDown(InputAction action)
     // Check controller buttons
     if (input.gamepad.available)
     {
-        GamepadButton *buttons = input.gamepadButtonMaps[action];
+        GamepadButton *buttons = inputMaps.gamepadButton[action];
         for (unsigned int i = 0; i < INPUT_MAX_MAPS && buttons[i] != 0; i++)
         {
             GamepadButton button = buttons[i];
@@ -197,7 +206,7 @@ bool IsInputActionDown(InputAction action)
     }
 
     // Check potential key combinations
-    KeyboardKey* keys = input.keyMaps[action];
+    KeyboardKey* keys = inputMaps.key[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && keys[i] != 0; i++)
     {
         KeyboardKey key = keys[i];
@@ -231,8 +240,8 @@ bool IsInputActionDown(InputAction action)
 bool IsInputActionAxisDown(InputAction action)
 {
     // sticks and triggers
-    GamepadAxis axis = input.gamepadAxisMaps[action].axis;
-    float deadzone = input.gamepadAxisMaps[action].deadzone;
+    GamepadAxis axis = inputMaps.gamepadAxis[action].axis;
+    float deadzone = inputMaps.gamepadAxis[action].deadzone;
     float axisValue = 0.0f;
     if (axis == INPUT_GAMEPAD_AXIS_LEFT_X)
         axis = GAMEPAD_AXIS_LEFT_X;
@@ -262,7 +271,7 @@ bool IsInputActionAxisDown(InputAction action)
 
 bool IsInputActionMouseDown(InputAction action)
 {
-    MouseButton* mb = input.mouseMaps[action];
+    MouseButton* mb = inputMaps.mouse[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && mb[i] != 0; i++)
     {
         MouseButton button = mb[i];
@@ -285,7 +294,7 @@ bool IsInputActionPressed(InputAction action)
     if (input.gamepad.available)
     {
         // buttons
-        GamepadButton *buttons = input.gamepadButtonMaps[action];
+        GamepadButton *buttons = inputMaps.gamepadButton[action];
         for (unsigned int i = 0; i < INPUT_MAX_MAPS && buttons[i] != 0; i++)
         {
             GamepadButton button = buttons[i];
@@ -297,7 +306,7 @@ bool IsInputActionPressed(InputAction action)
     }
 
     // Check potential key combinations
-    KeyboardKey* keys = input.keyMaps[action];
+    KeyboardKey* keys = inputMaps.key[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && keys[i] != 0; i++)
     {
         KeyboardKey key = keys[i];
@@ -340,7 +349,7 @@ bool IsInputActionAxisPressed(InputAction action)
 
 bool IsInputActionMousePressed(InputAction action)
 {
-    MouseButton* mb = input.mouseMaps[action];
+    MouseButton* mb = inputMaps.mouse[action];
     for (unsigned int i = 0; i < INPUT_MAX_MAPS && mb[i] != 0; i++)
     {
         MouseButton button = mb[i];

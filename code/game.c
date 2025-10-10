@@ -186,7 +186,7 @@ void UpdateGameFrame(void)
         InitNewLevel(game.currentLevel + 1);
 
     // Pause
-    if (input.actions.pause || input.actions.cancel)
+    if (input.player.pause || (game.isPaused && input.menu.cancel))
     {
         static float previousTextFade = 0.0f;
         game.isPaused = !game.isPaused;
@@ -198,7 +198,7 @@ void UpdateGameFrame(void)
         }
         else
         {
-            ui.currentMenu = UI_MENU_GAMEPLAY;
+            ui.currentMenu = UI_MENU_NONE;
             ui.textFade = previousTextFade;
         }
         PlaySound(game.sounds.menu);
@@ -217,7 +217,7 @@ void UpdateGameFrame(void)
         bool inputCooldownFinished = (SHIP_RESPAWN_TIME - game.ship.respawnTimer >= GAMEOVER_INPUT_COOLDOWN);
         if (game.lives == 0 && inputCooldownFinished)
         {
-            if (input.actions.confirm || input.mouse.tapped)
+            if (input.menu.confirm || input.mouse.tapped)
             {
                 InitNewLevel(1);
                 CancelUserInput();

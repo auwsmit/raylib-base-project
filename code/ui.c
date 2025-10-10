@@ -140,14 +140,14 @@ void FreeUiState(void)
 
 void UpdateUiFrame(void)
 {
-    if (input.actions.debug)
+    if (input.global.debug)
         game.debugMode = !game.debugMode;
 
     // Update title menu
-    if (ui.currentMenu != UI_MENU_GAMEPLAY)
+    if (ui.currentMenu != UI_MENU_NONE)
     {
         // Cancel/Back to main title menu
-        if (input.actions.cancel &&
+        if (input.menu.cancel &&
             ui.currentMenu != UI_MENU_TITLE &&
             ui.currentMenu != UI_MENU_PAUSE)
         {
@@ -186,7 +186,7 @@ void UpdateUiFrame(void)
 
 void UpdateUiMenuTraverse(void)
 {
-    if (ui.currentMenu == UI_MENU_GAMEPLAY)
+    if (ui.currentMenu == UI_MENU_NONE)
         return;
     UiMenu *menu = &ui.menus[ui.currentMenu];
 
@@ -211,8 +211,8 @@ void UpdateUiMenuTraverse(void)
 
     // Move cursor via input actions
     const float rapidFireIntervalTime = 0.6f;
-    bool isInputUp = input.actions.moveUp;
-    bool isInputDown = input.actions.moveDown;
+    bool isInputUp = input.menu.moveUp;
+    bool isInputDown = input.menu.moveDown;
     bool initialKeyPress = (!ui.autoScroll && ui.keyHeldTime == 0);
     bool heldLongEnoughToRepeat = (ui.autoScroll && ui.keyHeldTime >= 0.1f);
     if (initialKeyPress || heldLongEnoughToRepeat)
@@ -237,7 +237,7 @@ void UpdateUiMenuTraverse(void)
         }
     }
 
-    // Update auto-scroll timer when holding keys
+    // Update auto-scroll timer when movement input is held
     if (isInputUp || isInputDown)
     {
         ui.keyHeldTime += game.frameTime;
@@ -288,7 +288,7 @@ void UpdateUiButtonSelect(UiButton *button)
     if (!buttonTapped && !buttonClicked)
         button->clicked = false;
 
-    if (ui.currentMenu == UI_MENU_GAMEPLAY && (buttonTapped || buttonClicked))
+    if (ui.currentMenu == UI_MENU_NONE && (buttonTapped || buttonClicked))
     {
         if (button->buttonId == UI_BID_PAUSE)
         {
@@ -298,14 +298,14 @@ void UpdateUiButtonSelect(UiButton *button)
         }
     }
 
-    // else if (input.actions.confirm ||
+    // else if (input.menu.confirm ||
     //     (IsGestureDetected(GESTURE_TAP) &&
     //      (!IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && IsMouseWithinUiButton(button))))
 
     // Select a menu button
-    else if (input.actions.confirm || buttonTapped || buttonClicked)
+    else if (input.menu.confirm || buttonTapped || buttonClicked)
     {
-        if (ui.currentMenu == UI_MENU_GAMEPLAY && !game.isPaused)
+        if (ui.currentMenu == UI_MENU_NONE && !game.isPaused)
             return; // not a menu
 
         if (ui.currentMenu == UI_MENU_PAUSE && !ui.firstFrame)
@@ -314,7 +314,7 @@ void UpdateUiButtonSelect(UiButton *button)
             {
                 game.isPaused = false;
                 game.resumeInputCooldown = true;
-                ui.currentMenu = UI_MENU_GAMEPLAY;
+                ui.currentMenu = UI_MENU_NONE;
             }
             else if (ui.selectedId == UI_BID_BACKTOTITLE)
             {
@@ -327,7 +327,7 @@ void UpdateUiButtonSelect(UiButton *button)
             if (ui.selectedId == UI_BID_EXIT)
                 game.gameShouldExit = true;
             else if (ui.selectedId == UI_BID_START)
-                ChangeUiMenu(UI_MENU_GAMEPLAY);
+                ChangeUiMenu(UI_MENU_NONE);
         }
 
         PlaySound(game.sounds.menu);
@@ -409,7 +409,7 @@ void ChangeUiMenu(UiMenuState newMenu)
         // ui.pause.mouseHovered = false;
     }
 
-    else if (newMenu == UI_MENU_GAMEPLAY)
+    else if (newMenu == UI_MENU_NONE)
     {
         game.currentScreen = SCREEN_GAMEPLAY;
         InitNewLevel(game.currentLevel);
@@ -466,7 +466,7 @@ void DrawUiFrame(void)
 
     // Draw menus and buttons
     // ----------------------------------------------------------------------------
-    if (ui.currentMenu != UI_MENU_GAMEPLAY) // Draw non-gameplay menu
+    if (ui.currentMenu != UI_MENU_NONE) // Draw non-gameplay menu
     {
         UiButton *selectedButton = &ui.menus[ui.currentMenu].buttons[ui.selectedId];
         DrawUiCursor(selectedButton);

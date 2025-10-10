@@ -59,22 +59,21 @@ typedef enum InputAction {
     INPUT_ACTION_SHOOT,
 } InputAction;
 
-typedef struct InputActionsState {
+typedef struct InputActionsGlobal {
     // global
     bool fullscreen;
     bool debug;
+} InputActionsGlobal;
 
-    // menu
+typedef struct InputActionsMenu {
     bool confirm;
     bool cancel;
     bool moveUp;
     bool moveDown;
-
-    // in-game
-    bool pause;
-} InputActionsState;
+} InputActionsMenu;
 
 typedef struct InputActionsPlayer {
+    bool pause;
     bool rotateLeft;
     bool rotateRight;
     bool thrust;
@@ -124,9 +123,17 @@ typedef struct GamepadAxisMap {
                     // used to map analog stick or trigger as buttons
 } GamepadAxisMap;
 
+typedef struct InputActionMaps {
+    KeyboardKey key[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
+    MouseButton mouse[INPUT_ACTIONS_COUNT][4];
+    GamepadButton gamepadButton[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
+    GamepadAxisMap gamepadAxis[INPUT_ACTIONS_COUNT];
+} InputActionMaps;
+
 typedef struct InputState {
     // tracks input actions for current frame
-    InputActionsState actions;
+    InputActionsGlobal global;
+    InputActionsMenu menu;
     InputActionsPlayer player;
 
     // generic input info
@@ -134,23 +141,17 @@ typedef struct InputState {
     InputGamepadState gamepad;
     TouchPoint touchPoints[INPUT_MAX_TOUCH_POINTS];
 
-    // mappings for input actions
-    KeyboardKey keyMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    MouseButton mouseMaps[INPUT_ACTIONS_COUNT][4];
-    GamepadButton gamepadButtonMaps[INPUT_ACTIONS_COUNT][INPUT_MAX_MAPS];
-    GamepadAxisMap gamepadAxisMaps[INPUT_ACTIONS_COUNT];
+    int gamepadId;
+    int gamepadButtonPressed;
+    int touchCount;
+    bool touchMode; // enabled when touch points are detected, disabled by any non-touch input
+    bool touchButtonDown[INPUT_ACTIONS_COUNT];
+    bool touchButtonPressed[INPUT_ACTIONS_COUNT];
     bool gamepadAxisPressedCurrentFrame[INPUT_ACTIONS_COUNT]; // for when an axis is mapped as a button
     bool gamepadAxisPressedPreviousFrame[INPUT_ACTIONS_COUNT];
-
-    bool touchButtonDown[INPUT_ACTIONS_COUNT]; // for touch screen input buttons
-    bool touchButtonPressed[INPUT_ACTIONS_COUNT];
-    int gamepadId;
-    int touchCount;
-    int gamepadButtonPressed;
     bool anyGamepadButtonPressed;
     bool anyKeyPressed;
     bool anyInputPressed;
-    bool touchMode; // enabled when touch points are detected, disabled by any non-touch input
 } InputState;
 
 extern InputState input;
@@ -159,7 +160,7 @@ extern InputState input;
 // ----------------------------------------------------------------------------
 
 // Primary
-void InitDefaultInputSettings(void); // Sets the default key mapping control scheme
+void InitDefaultInputSettings(void); // Sets the default control settings and mappings
 void ProcessUserInput(void); // Process all user inputs for the current frame
 void ProcessVirtualGamepad(void); // Process touch screen input buttons
 void CancelUserInput(void); // Cancel all user inputs for the current frame

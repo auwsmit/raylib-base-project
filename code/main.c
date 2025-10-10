@@ -185,7 +185,7 @@ void HandleToggleFullscreen(void)
     // For now just use emscripten's fullscreen button
 #if !defined(PLATFORM_WEB)
     // Input for fullscreen
-    if (input.actions.fullscreen)
+    if (input.global.fullscreen)
     {
         // Borderless Windowed is generally nicer to use on desktop
         ToggleBorderlessWindowed();

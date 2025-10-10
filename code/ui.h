@@ -32,7 +32,7 @@
 // ----------------------------------------------------------------------------
 
 typedef enum UiMenuState {
-    UI_MENU_TITLE, UI_MENU_PAUSE, UI_MENU_GAMEPLAY
+    UI_MENU_TITLE, UI_MENU_PAUSE, UI_MENU_NONE
 } UiMenuState;
 
 typedef enum UiTitleMenuId {
