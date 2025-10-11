@@ -43,6 +43,8 @@ set cmake_build_dir=build
 set web_shell=code\shell.html
 set source_code=
 for %%f in ("%script_dir%code\*.c") do set source_code=!source_code! "%%f"
+for %%f in ("%script_dir%code\module\*.c") do set source_code=!source_code! "%%f"
+for %%f in ("%script_dir%code\entity\*.c") do set source_code=!source_code! "%%f"
 
 :: Unpack Arguments
 :: ----------------------------------------------------------------------------
@@ -106,14 +108,14 @@ if "%cmake%"=="1"   (
 
 :: Compile/Link Line Definitions
 :: ----------------------------------------------------------------------------
-set cc_common=   -I"raylib\include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes
+set cc_common=   -I"raylib\include" -I"code\include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes
 set cc_link=     -L"raylib\lib\windows" -lraylib -lopengl32 -lgdi32 -lwinmm
 set cc_debug=    -g -O0
 set cc_release=  -O2
-set web_release= -O3
+set web_release= -Os
 set web_link=    -L"raylib\lib\web" -lraylib --shell-file "%web_shell%" -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 --preload-file "%assets%"
 set cc_out=      -o
-set cl_common=   cl /I"raylib\include" /W3 /MD /Zi /DPLATFORM_DESKTOP
+set cl_common=   cl /I"raylib\include" /I"code\include" /W3 /MD /Zi /DPLATFORM_DESKTOP
 set cl_link=     /link /INCREMENTAL:NO /LIBPATH:"raylib\lib\windows-msvc" raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
 set cl_debug=    -Od /DEBUG
 set cl_release=  -O3

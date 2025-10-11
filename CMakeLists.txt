@@ -46,8 +46,9 @@ endif()
 # Setup Project
 # --------------------------------------------------------------------------------
 
-file(GLOB SRC_FILES code/*.c)
+file(GLOB SRC_FILES code/*.c code/module/*.c code/entity/*.c)
 add_executable(${OUTPUT_NAME} ${SRC_FILES})
+target_include_directories(${OUTPUT_NAME} PRIVATE code/include)
 target_link_libraries(${OUTPUT_NAME} ${LIBRARIES})
 
 # Cross-platform Configurations

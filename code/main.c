@@ -5,9 +5,9 @@
 #include "raylib.h"
 
 #include "config.h" // Program config, e.g. window title/size, fps, vsync
-#include "input.h"  // Input controls / key mappings
-#include "logo.h"   // Raylib logo animation
-#include "ui.h"     // User interface (menus and buttons)
+#include "input.h" // Input controls / key mappings
+#include "logo.h"  // Raylib logo animation
+#include "ui.h"    // User interface (menus and buttons)
 #include "game.h"
 
 #if defined(PLATFORM_WEB) // for compiling to wasm (web assembly)

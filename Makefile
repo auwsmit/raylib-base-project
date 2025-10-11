@@ -44,16 +44,17 @@ endif
 OUTPUT     := asteroids
 
 # Source code, headers, and object file paths
-SRC_DIR    := code
-ASSETS     := assets
-OBJ_DIR    := $(SRC_DIR)/obj
-SRC        := $(wildcard $(SRC_DIR)/*.c)
-HEADERS    := $(wildcard $(SRC_DIR)/*.h)
-OBJS       := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%$(OBJ_EXT),$(SRC))
-
-# raylib path
 RAYLIB_INC := raylib/include
 RAYLIB_LIB := raylib/lib
+ASSETS     := assets
+SRC_DIR    := code
+INC    := $(SRC_DIR)/include
+OBJ_DIR    := $(SRC_DIR)/obj
+SRC        := $(wildcard $(SRC_DIR)/*.c) \
+              $(wildcard $(SRC_DIR)/module/*.c) \
+              $(wildcard $(SRC_DIR)/entity/*.c)
+HEADERS    := $(wildcard $(INC)/*.h)
+OBJS       := $(addprefix $(OBJ_DIR)/,$(notdir $(SRC:.c=$(OBJ_EXT))))
 
 # ==============================================================================
 # Compiler Settings
@@ -76,8 +77,8 @@ ifeq ($(CC),cl)
     else ifeq ($(CONFIG),DEBUG)
         DEBUG_FLAGS := /Od /Zi
     endif
-else ifeq ($(PLATFORM),WEB) # Web always optimized
-    OPT_FLAGS := -O3
+else ifeq ($(PLATFORM),WEB) # Web always optimized (TODO check emscripten debug page)
+    OPT_FLAGS := -Os
 else ifeq ($(CONFIG),RELEASE)
     OPT_FLAGS := -O2
 else ifeq ($(CONFIG),DEBUG)
@@ -105,20 +106,18 @@ CFLAGS += -Wextra -Wmissing-prototypes -Wstrict-prototypes
 
 # MSVC cl.exe Flags
 # -----------------------------------------------------------------------------
-# /Fo    Specify output directory for object files
-# /Od    Disable optimizations (good for debugging)
 # /W3    Set warning level to 3 (default is 1, max is 4)
 # /MD    Link against MSVCRT.DLL (multithreaded DLL runtime)
 # /Zi    Generate complete debugging information (.pdb files)
 ifeq ($(CC),cl)
-    CFLAGS := /Fo"$(OBJ_DIR)\\" /W3 /MD
+    CFLAGS := /W3 /MD
 endif
 
 # Define C preprocessor flags and linker flags
-CPPFLAGS := -I$(RAYLIB_INC)
+CPPFLAGS := -I$(RAYLIB_INC) -I$(INC)
 LINKFLAGS  := -lraylib
 ifeq ($(CC),cl)
-    CPPFLAGS := /I$(RAYLIB_INC)
+    CPPFLAGS := /I"$(RAYLIB_INC)" /I"$(INC)"
     LINKFLAGS  := /link /LIBPATH:"$(RAYLIB_LIB)/windows-msvc" \
                   raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
     ifeq ($(CONFIG),DEBUG)
@@ -162,8 +161,8 @@ ifeq ($(PLATFORM),LINUX)
 endif
 ifeq ($(CC),cl)
     CFLAG_C := /c
-    CFLAG_O := /Fe:
-    OUTFLAG := $(CFLAG_O)$(OUTPUT)$(EXTENSION)
+    CFLAG_O := /Fo
+    OUTFLAG := /Fe:$(OUTPUT)$(EXTENSION)
     PLATFLAG := /DPLATFORM_$(PLATFORM)
 else
     CFLAG_C := -c
@@ -195,7 +194,11 @@ $(OUTPUT)$(EXTENSION): $(OBJS)
 
 # Compile c files to object files
 $(OBJ_DIR)/%$(OBJ_EXT): $(SRC_DIR)/%.c $(HEADERS)
-	$(CC) $(CFLAG_C) $< $(CFLAG_O) $@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
+	$(CC) $(CFLAG_C) $< $(CFLAG_O)$@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
+$(OBJ_DIR)/%$(OBJ_EXT): $(SRC_DIR)/module/%.c $(HEADERS)
+	$(CC) $(CFLAG_C) $< $(CFLAG_O)$@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
+$(OBJ_DIR)/%$(OBJ_EXT): $(SRC_DIR)/entity/%.c $(HEADERS)
+	$(CC) $(CFLAG_C) $< $(CFLAG_O)$@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
 
 # Create folder for object files
 $(OBJ_DIR):

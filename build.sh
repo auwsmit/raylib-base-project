@@ -38,6 +38,8 @@ cmake_build_dir=build
 web_shell=code/shell.html
 source_code=
 for f in "$script_dir/code"/*.c; do source_code="$source_code \"$f\""; done
+for f in "$script_dir/code/module"/*.c; do source_code="$source_code \"$f\""; done
+for f in "$script_dir/code/entity"/*.c; do source_code="$source_code \"$f\""; done
 
 # Script Entry Point
 # -----------------------------------------------------------------------------
@@ -109,12 +111,12 @@ script_choose_cmake_lines()
 script_choose_simple_lines()
 {
     # Line Definitions
-    cc_common='-I"raylib/include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes'
+    cc_common='-I"raylib/include" -I"code/include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes'
     cc_link='-lraylib -lGL -lm -lpthread -ldl -lrt -lX11'
     cc_debug='-g -O0'
     cc_release='-O2'
     cc_out='-o'
-    web_release='-O3'
+    web_release='-Os'
     web_link='-L"raylib/lib/web" -lraylib --shell-file "$web_shell" -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 preload-file "$assets"'
     platform_desktop='-DPLATFORM_DESKTOP'
     platform_web='-DPLATFORM_WEB'
