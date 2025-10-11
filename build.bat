@@ -155,10 +155,11 @@ if "%cmake%"=="1" (
     %cmake_setup_cmd% %cmake_setup_flags%
     %cmake_build_cmd% %cmake_build_flags%
     if "%web%"=="1" (
-        del /q "%output%.html" "%output%.js" "%output%.wasm"
+        del /q "%output%.html" "%output%.js" "%output%.wasm" "%output%.data"
         copy "%output_dir%\%output%.html" .
         copy "%output_dir%\%output%.js" .
         copy "%output_dir%\%output%.wasm" .
+        copy "%output_dir%\%output%.data" .
     ) else (
         del /q "%output%.exe"
         copy "%output_dir%\%output%.exe" .
@@ -184,7 +185,7 @@ if "%cmake%"=="1" (
 ) else (
     rmdir /s /q build_web
     del /q %output%.exe
-    del /q %output%.html %output%.js %output%.wasm
+    del /q %output%.html %output%.js %output%.wasm %output%.data
     del /q %output%.ilk %output%.pdb vc140.pdb *.rdi
     echo Build files cleaned
 )

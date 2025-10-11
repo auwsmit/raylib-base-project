@@ -141,10 +141,11 @@ script_cmake_config_and_build()
     eval $cmake_setup_cmd $cmake_setup_flags
     eval $cmake_build_cmd $cmake_build_flags
     if [[ "$web" == 1 ]]; then
-        rm -f "$output.html" "$output.js" "$output.wasm"
+        rm -f "$output.html" "$output.js" "$output.wasm" "$output.data"
         cp "$output_dir/$output.html" .
         cp "$output_dir/$output.js" .
         cp "$output_dir/$output.wasm" .
+        cp "$output_dir/$output.data" .
     else
         rm -f "$output"
         cp "$output_dir/$output" .
@@ -164,7 +165,7 @@ script_build_cleanup()
         rm -rf $output build/
         echo "CMake build files cleaned"
     else
-        rm -rf $output build_web/ $output.html $output.js $output.wasm
+        rm -rf $output build_web/ $output.html $output.js $output.wasm $output.data
         echo "Build files cleaned"
     fi
     popd

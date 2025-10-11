@@ -146,7 +146,7 @@ else ifeq ($(PLATFORM),WEB)
     # --memory-init-file 0        to avoid an external memory initialization code file (.mem)
     # --preload-file resources    specify a resources folder for data compilation
     # --source-map-base           allow debugging in browser with source map
-    LINKFLAGS  += -L$(RAYLIB_LIB)/web --shell-file $(SRC_DIR)/shell.html \
+    LINKFLAGS  += -L$(RAYLIB_LIB)/web --shell-file shell.html \
     -sUSE_GLFW=3 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sTOTAL_MEMORY=67108864 \
     -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 \
     --preload-file $(ASSETS)
@@ -229,6 +229,6 @@ run:
 # Clean up generated build files
 clean:
 	@rm -rf $(OUTPUT)$(EXTENSION) $(OBJ_DIR) \
-	        $(OUTPUT).html $(OUTPUT).js $(OUTPUT).wasm build_web/ \
+	        $(OUTPUT).html $(OUTPUT).js $(OUTPUT).wasm $(OUTPUT).data build_web/ \
 	        $(OUTPUT).ilk $(OUTPUT).pdb vc140.pdb *.rdi
 	@echo "Make build files cleaned"
