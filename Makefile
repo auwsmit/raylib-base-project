@@ -16,29 +16,31 @@
 #
 # -----------------------------------------------------------------------------
 
-# ==============================================================================
+# =============================================================================
 # Platform Settings
-# ==============================================================================
+# =============================================================================
 
+PLAT := DESKTOP
 ifeq ($(PLATFORM),WEB)
+    PLAT := WEB
     EXTENSION := .html
     OBJ_EXT   := .o
 else ifeq ($(OS),Windows_NT)
-    PLATFORM  := WINDOWS
+    OS := WINDOWS
     EXTENSION := .exe
     OBJ_EXT   := .obj
 else
     UNAME_S   := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
-        PLATFORM := LINUX
+        OS := LINUX
     endif
     EXTENSION :=
     OBJ_EXT   := .o
 endif
 
-# ==============================================================================
+# =============================================================================
 # Project Config
-# ==============================================================================
+# =============================================================================
 
 # Output executable name
 OUTPUT     := asteroids
@@ -46,19 +48,18 @@ OUTPUT     := asteroids
 # Source code, headers, and object file paths
 RAYLIB_INC := raylib/include
 RAYLIB_LIB := raylib/lib
-ASSETS     := assets
 SRC_DIR    := code
-INC    := $(SRC_DIR)/include
-OBJ_DIR    := $(SRC_DIR)/obj
+INC_DIR    := $(SRC_DIR)/include
+HEADERS    := $(wildcard $(INC_DIR)/*.h)
 SRC        := $(wildcard $(SRC_DIR)/*.c) \
               $(wildcard $(SRC_DIR)/module/*.c) \
               $(wildcard $(SRC_DIR)/entity/*.c)
-HEADERS    := $(wildcard $(INC)/*.h)
-OBJS       := $(addprefix $(OBJ_DIR)/,$(notdir $(SRC:.c=$(OBJ_EXT))))
+OBJ_DIR := $(SRC_DIR)/obj
+OBJS    := $(addprefix $(OBJ_DIR)/, $(notdir $(SRC:.c=$(OBJ_EXT))))
 
-# ==============================================================================
+# =============================================================================
 # Compiler Settings
-# ==============================================================================
+# =============================================================================
 
 # Compiler fallback just in case
 ifeq ($(PLATFORM),WEB)
@@ -71,7 +72,7 @@ endif
 CONFIG ?= DEBUG
 
 # Debug or Release flags
-ifeq ($(CC),cl)
+ifeq ($(CC),cl) # MSVC
     ifeq ($(CONFIG),RELEASE)
         OPT_FLAGS := /O2
     else ifeq ($(CONFIG),DEBUG)
@@ -96,13 +97,14 @@ endif
 #  -Wno-missing-braces  ignore invalid warning (GCC bug 53119)
 #  -Wno-unused-value    ignore unused return values of some functions (i.e. fread())
 #  -D_DEFAULT_SOURCE    use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
-CFLAGS := -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result
+CFLAGS := -std=c99 -D_DEFAULT_SOURCE -Wall -Wno-missing-braces -Wunused-result
 # Additional flags for compiler (if desired)
-#  -Wextra                  enables some extra warning flags that are not enabled by -Wall
-#  -Wmissing-prototypes     warn if a global function is defined without a previous prototype declaration
-#  -Wstrict-prototypes      warn if a function is declared or defined without specifying the argument types
-#  -Werror=implicit-function-declaration   catch function calls without prior declaration
-CFLAGS += -Wextra -Wmissing-prototypes -Wstrict-prototypes
+#  -Wextra                enables some extra warning flags that are not enabled by -Wall
+#  -Wmissing-prototypes   warn if a global function is defined without a previous prototype declaration
+#  -Wstrict-prototypes    warn if a function is declared or defined without specifying the argument types
+#  -Wfloat-conversion     warn about implicit type conversion for floats
+#  -Werror=implicit-function-declaration    catch function calls without prior declaration
+CFLAGS += -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 
 # MSVC cl.exe Flags
 # -----------------------------------------------------------------------------
@@ -114,20 +116,22 @@ ifeq ($(CC),cl)
 endif
 
 # Define C preprocessor flags and linker flags
-CPPFLAGS := -I$(RAYLIB_INC) -I$(INC)
-LINKFLAGS  := -lraylib
+CPPFLAGS  := -I"$(RAYLIB_INC)" -I"$(INC_DIR)"
+PLATFLAG  := -DPLATFORM_$(PLAT)
 ifeq ($(CC),cl)
-    CPPFLAGS := /I"$(RAYLIB_INC)" /I"$(INC)"
-    LINKFLAGS  := /link /LIBPATH:"$(RAYLIB_LIB)/windows-msvc" \
+    CPPFLAGS := /I"$(RAYLIB_INC)" /I"$(INC_DIR)"
+    LINKFLAGS := /link /LIBPATH:"$(RAYLIB_LIB)/windows-msvc" \
                   raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
+    PLATFLAG := /DPLATFORM_$(PLAT)
     ifeq ($(CONFIG),DEBUG)
         LINKFLAGS += /DEBUG
     endif
-else ifeq ($(PLATFORM),WINDOWS)
-    LINKFLAGS  += -L$(RAYLIB_LIB)/windows -lopengl32 -lgdi32 -lwinmm
-else ifeq ($(PLATFORM),LINUX)
-    LINKFLAGS  += -lGL -lm -lpthread -ldl -lrt -lX11
-else ifeq ($(PLATFORM),WEB)
+else ifeq ($(OS),WINDOWS)
+    LINKFLAGS  := -lraylib -L"$(RAYLIB_LIB)/windows" -lopengl32 -lgdi32 -lwinmm
+else ifeq ($(OS),LINUX)
+    LINKFLAGS  := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+endif
+ifeq ($(PLATFORM),WEB)
     # Web (emscripten emcc) Flags
     # -----------------------------------------------------------------------------
     # -Os                         size optimization
@@ -146,72 +150,65 @@ else ifeq ($(PLATFORM),WEB)
     # --memory-init-file 0        to avoid an external memory initialization code file (.mem)
     # --preload-file resources    specify a resources folder for data compilation
     # --source-map-base           allow debugging in browser with source map
-    LINKFLAGS  += -L$(RAYLIB_LIB)/web --shell-file shell.html \
+    LINKFLAGS  := -lraylib -L"$(RAYLIB_LIB)/web" --shell-file shell.html \
     -sUSE_GLFW=3 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sTOTAL_MEMORY=67108864 \
     -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 \
-    --preload-file $(ASSETS)
+    --preload-file assets
 endif
 
 # Define output flags
-ifeq ($(PLATFORM),WINDOWS)
-    PLATFORM := DESKTOP
-endif
-ifeq ($(PLATFORM),LINUX)
-    PLATFORM := DESKTOP
-endif
 ifeq ($(CC),cl)
-    CFLAG_C := /c
-    CFLAG_O := /Fo
+    NOLINK := /c
+    OBJOUT := /Fo
     OUTFLAG := /Fe:$(OUTPUT)$(EXTENSION)
-    PLATFLAG := /DPLATFORM_$(PLATFORM)
 else
-    CFLAG_C := -c
-    CFLAG_O := -o
-    OUTFLAG := $(CFLAG_O) $(OUTPUT)$(EXTENSION)
-    PLATFLAG := -DPLATFORM_$(PLATFORM)
+    NOLINK := -c
+    OBJOUT := -o
+    OUTFLAG := -o $(OUTPUT)$(EXTENSION)
 endif
+
+# Combine CFLAGS
+CFLAGS += $(OPT_FLAGS) $(DEBUG_FLAGS) $(CPPFLAGS) $(PLATFLAG)
 
 # ==============================================================================
 # Targets
 # ==============================================================================
 
-# MAKE SYNTAX NOTES
-# ----------------------------------------------------
-# target: dependency1 dependency2
-# % = wildcard match between target and dependency
-# $@ = target, $< = dependency1, $^ = all dependencies
-# ----------------------------------------------------
+# let `make` know that these aren't files
+.PHONY: all clang msvc web gh-pages clean
 
-# tell `make` that these aren't files
-.PHONY: all llvm msvc web gh-pages clean
+# # Incremental build: (not really needed at this scale, but still good to know)
+# # -----------------------------------------------------------------------------
+# # Compile for desktop with no arguments/platform specified
+# all: $(OUTPUT)$(EXTENSION)
 
-# (Default) Compile for desktop with no arguments/platform specified
-all: $(OUTPUT)$(EXTENSION)
+# # Link object files into final executable
+# $(OUTPUT)$(EXTENSION): $(OBJS)
+# 	$(CC) $(foreach obj,$(OBJS),"$(obj)") $(OUTFLAG) $(LINKFLAGS)
 
-# Link object files into final executable
-$(OUTPUT)$(EXTENSION): $(OBJS)
-	$(CC) $(OUTFLAG) $^ $(LINKFLAGS)
+# # Compile c files to object files
+# VPATH := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
+# $(OBJ_DIR)/%$(OBJ_EXT): %.c $(HEADERS)
+# 	$(CC) $(NOLINK) $(CFLAGS) "$<" $(OBJOUT)"$@"
 
-# Compile c files to object files
-$(OBJ_DIR)/%$(OBJ_EXT): $(SRC_DIR)/%.c $(HEADERS)
-	$(CC) $(CFLAG_C) $< $(CFLAG_O)$@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
-$(OBJ_DIR)/%$(OBJ_EXT): $(SRC_DIR)/module/%.c $(HEADERS)
-	$(CC) $(CFLAG_C) $< $(CFLAG_O)$@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
-$(OBJ_DIR)/%$(OBJ_EXT): $(SRC_DIR)/entity/%.c $(HEADERS)
-	$(CC) $(CFLAG_C) $< $(CFLAG_O)$@ $(OPT_FLAGS) $(DEBUG_FLAGS) $(CFLAGS) $(PLATFLAG) $(CPPFLAGS)
+# # Create folder for object files
+# $(OBJ_DIR):
+# 	mkdir -p $(OBJ_DIR)
+# $(OBJS): | $(OBJ_DIR)
+# # -----------------------------------------------------------------------------
 
-# Create folder for object files
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-$(OBJS): | $(OBJ_DIR)
+# Compile everything at once
+all:
+	$(CC) $(CFLAGS) $(foreach f,$(SRC),"$(f)") $(OUTFLAG) $(LINKFLAGS)
 
 # Build with clang
-llvm:
+clang:
 	$(MAKE) CC=clang
 
 # Build with MSVC cl.exe
 msvc:
 	$(MAKE) CC=cl
+	@rm -f *.obj
 
 # Build to web assembly with emscripten
 web:

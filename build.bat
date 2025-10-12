@@ -38,9 +38,7 @@ set script_dir=%~dp0
 :: Project Config
 :: ----------------------------------------------------------------------------
 set output=asteroids
-set assets=assets
 set cmake_build_dir=build
-set web_shell=code\shell.html
 set source_code=
 for %%f in ("%script_dir%code\*.c") do set source_code=!source_code! "%%f"
 for %%f in ("%script_dir%code\module\*.c") do set source_code=!source_code! "%%f"
@@ -108,34 +106,42 @@ if "%cmake%"=="1"   (
 
 :: Compile/Link Line Definitions
 :: ----------------------------------------------------------------------------
-set cc_common=   -I"raylib\include" -I"code\include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes
-set cc_link=     -L"raylib\lib\windows" -lraylib -lopengl32 -lgdi32 -lwinmm
+set cc_common=   -I"raylib\include" -I"code\include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 set cc_debug=    -g -O0
 set cc_release=  -O2
-set web_release= -Os
-set web_link=    -L"raylib\lib\web" -lraylib --shell-file "%web_shell%" -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 --preload-file "%assets%"
+set cc_platform= -DPLATFORM_DESKTOP
+set cc_link=     -lraylib -L"raylib\lib\windows" -lopengl32 -lgdi32 -lwinmm
 set cc_out=      -o
-set cl_common=   cl /I"raylib\include" /I"code\include" /W3 /MD /Zi /DPLATFORM_DESKTOP
+
+set cl_common=   cl /I"raylib\include" /I"code\include" /W3 /MD
+set cl_debug=    -Od /Zi
+set cl_release=  -O2
+set cl_platform= -DPLATFORM_DESKTOP
 set cl_link=     /link /INCREMENTAL:NO /LIBPATH:"raylib\lib\windows-msvc" raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
-set cl_debug=    -Od /DEBUG
-set cl_release=  -O3
+set cl_link_debug= /DEBUG
 set cl_out=      /Fe:
-set platform_desktop=-DPLATFORM_DESKTOP
-set platform_web=-DPLATFORM_WEB
+
+set web_release=  -Os
+set web_platform= -DPLATFORM_DESKTOP
+set web_link=     -lraylib -L"raylib\lib\web" --shell-file shell.html -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 --preload-file assets
 
 :: Choose Compile/Link Lines
 :: ----------------------------------------------------------------------------
-if     "%gcc%"=="1"   set compile=gcc %cc_common% %platform_desktop%
-if     "%clang%"=="1" set compile=clang %cc_common% %platform_desktop%
-if     "%web%"=="1"   set compile=emcc %cc_common% %platform_web%
+if     "%gcc%"=="1"   set compile=gcc %cc_common%
+if     "%clang%"=="1" set compile=clang %cc_common%
+if     "%web%"=="1"   set compile=emcc %cc_common%
+if     "%web%"=="1"   set compile_platform=%web_platform%
+if not "%web%"=="1"   set compile_platform=%cc_platform%
 if     "%web%"=="1"                      set compile_link=%web_link%
 if not "%web%"=="1" if not "%msvc%"=="1" set compile_link=%cc_link%
 if     "%web%"=="1"                      set compile_out=%cc_out% %output%.html
 if not "%web%"=="1" if not "%msvc%"=="1" set compile_out=%cc_out% %output%.exe
 
 if "%msvc%"=="1"     set compile=%cl_common%
+if "%debug%"=="1"    set cl_link=%cl_link% %cl_link_debug%
 if "%msvc%"=="1"     set compile_link=%cl_link%
 if "%msvc%"=="1"     set compile_out=%cl_out%%output%.exe
+if "%msvc%"=="1"     set compile_platform=%cl_platform%
 
 if not "%msvc%"=="1" set compile_debug=%cc_debug%
 if     "%msvc%"=="1" set compile_debug=%cl_debug%
@@ -145,6 +151,7 @@ if     "%web%"=="1"  set compile_release=%web_release%
 
 if "%debug%"=="1"    set compile=%compile% %compile_debug%
 if "%release%"=="1"  set compile=%compile% %compile_release%
+set compile=%compile% %compile_platform%
 
 :: Build The Project
 :: ----------------------------------------------------------------------------
@@ -167,8 +174,8 @@ if "%cmake%"=="1" (
 )
 
 if "%simple_build%"=="1" (
-    echo %compile% %compile_out% %source_code% %compile_link%
-    %compile% %compile_out% %source_code% %compile_link%
+    echo %compile% %source_code% %compile_out% %compile_link%
+    %compile% %source_code% %compile_out% %compile_link%
     if "%msvc%"=="1" del /q "%script_dir%\*.obj"
 )
 popd

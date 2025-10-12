@@ -6,7 +6,7 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 # Usage Notes
 # -----------------------------------------------------------------------------
 #
-# This is the build script for this project for Linux.
+# This is the build script for this project on Linux.
 #
 # It can be used in two main ways:
 # 1. `./build` to simply compile the game with a C compiler
@@ -33,16 +33,13 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 # Project Config
 # -----------------------------------------------------------------------------
 output=asteroids
-assets=assets
 cmake_build_dir=build
-web_shell=code/shell.html
 source_code=
 for f in "$script_dir/code"/*.c; do source_code="$source_code \"$f\""; done
 for f in "$script_dir/code/module"/*.c; do source_code="$source_code \"$f\""; done
 for f in "$script_dir/code/entity"/*.c; do source_code="$source_code \"$f\""; done
 
 # Script Entry Point
-# -----------------------------------------------------------------------------
 main()
 {
     script_unpack_args "$@"
@@ -58,7 +55,6 @@ main()
 }
 
 # Unpack Arguments
-# -----------------------------------------------------------------------------
 script_unpack_args()
 {
     for arg in "$@"; do eval "$arg=1"; done
@@ -111,20 +107,23 @@ script_choose_cmake_lines()
 script_choose_simple_lines()
 {
     # Line Definitions
-    cc_common='-I"raylib/include" -I"code/include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes'
-    cc_link='-lraylib -lGL -lm -lpthread -ldl -lrt -lX11'
+    cc_common='-I"raylib/include" -I"code/include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion'
     cc_debug='-g -O0'
     cc_release='-O2'
+    cc_platform='-DPLATFORM_DESKTOP'
+    cc_link='-lraylib -lGL -lm -lpthread -ldl -lrt -lX11'
     cc_out='-o'
+
     web_release='-Os'
-    web_link='-L"raylib/lib/web" -lraylib --shell-file "$web_shell" -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 preload-file "$assets"'
-    platform_desktop='-DPLATFORM_DESKTOP'
-    platform_web='-DPLATFORM_WEB'
+    web_platform='-DPLATFORM_WEB'
+    web_link='-lraylib -L"raylib/lib/web" --shell-file shell.html -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 preload-file assets'
 
     # Choose Lines
-    if [[ "$gcc" == 1     ]]; then compile="gcc $cc_common $platform_desktop"; fi
-    if [[ "$clang" == 1   ]]; then compile="clang $cc_common $platform_desktop"; fi
-    if [[ "$web" == 1     ]]; then compile="emcc $cc_common $platform_web"; fi
+    if [[ "$gcc" == 1     ]]; then compile="gcc $cc_common"; fi
+    if [[ "$clang" == 1   ]]; then compile="clang $cc_common"; fi
+    if [[ "$web" == 1     ]]; then compile="emcc $cc_common"; fi
+    if [[ "$web" == 1     ]]; then compile_platform="$web_platform"; fi
+    if [[ "$web" != 1     ]]; then compile_platform="$cc_platform"; fi
     if [[ "$web" == 1     ]]; then compile_link="$web_link"; fi
     if [[ "$web" != 1     ]]; then compile_link="$cc_link"; fi
     if [[ "$web" == 1     ]]; then compile_out="$cc_out $output.html"; fi
@@ -132,6 +131,7 @@ script_choose_simple_lines()
     if [[ "$web" == 1     ]]; then compile_release="$web_release"; fi
     if [[ "$debug" == 1   ]]; then compile="$compile $cc_debug"; fi
     if [[ "$release" == 1 ]]; then compile="$compile $cc_release"; fi
+    compile="$compile $compile_platform"
 }
 
 script_cmake_config_and_build()
@@ -154,8 +154,8 @@ script_cmake_config_and_build()
 
 script_simple_build()
 {
-    echo "$compile $source_code $compile_link $compile_out"
-    eval $compile $source_code $compile_link $compile_out
+    echo "$compile $source_code $compile_out $compile_link"
+    eval $compile $source_code $compile_out $compile_link
 }
 
 script_build_cleanup()
