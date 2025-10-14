@@ -2,7 +2,7 @@
 
 # --- Usage Notes -------------------------------------------------------------
 #
-# This makefile is used to build this game project on Windows and Linux.
+# This makefile is used to build this project on Windows and Linux.
 #
 # With no arguments, running `make` will build the game executable for Desktop
 # with gcc and place a copy in the repo directory. It can take a single
@@ -30,7 +30,7 @@ else ifeq ($(OS),Windows_NT)
     EXTENSION := .exe
     OBJ_EXT   := .obj
 else
-    UNAME_S   := $(shell uname -s)
+    UNAME_S  := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
         OS := LINUX
     endif
@@ -43,19 +43,22 @@ endif
 # =============================================================================
 
 # Output executable name
-OUTPUT     := asteroids
+OUTPUT  := asteroids
 
 # Source code, headers, and object file paths
 RAYLIB_INC := raylib/include
 RAYLIB_LIB := raylib/lib
-SRC_DIR    := code
-INC_DIR    := $(SRC_DIR)/include
-HEADERS    := $(wildcard $(INC_DIR)/*.h)
-SRC        := $(wildcard $(SRC_DIR)/*.c) \
-              $(wildcard $(SRC_DIR)/module/*.c) \
-              $(wildcard $(SRC_DIR)/entity/*.c)
+SRC_DIR := code
+INC_DIR := $(SRC_DIR)/include
+HEADERS := $(wildcard $(INC_DIR)/*.h)
+SRC     := $(wildcard $(SRC_DIR)/*.c) \
+           $(wildcard $(SRC_DIR)/module/*.c) \
+           $(wildcard $(SRC_DIR)/entity/*.c)
 OBJ_DIR := $(SRC_DIR)/obj
 OBJS    := $(addprefix $(OBJ_DIR)/, $(notdir $(SRC:.c=$(OBJ_EXT))))
+
+# Specify paths for make to search for files
+VPATH   := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
 
 # =============================================================================
 # Compiler Settings
@@ -71,19 +74,19 @@ endif
 # Debug build by default
 CONFIG ?= DEBUG
 
-# Debug or Release flags
+# Optimization / Debug flags
 ifeq ($(CC),cl) # MSVC
     ifeq ($(CONFIG),RELEASE)
-        OPT_FLAGS := /O2
+        OPTIMIZE_FLAGS := /O2
     else ifeq ($(CONFIG),DEBUG)
-        DEBUG_FLAGS := /Od /Zi
+        OPTIMIZE_FLAGS := /Od /Zi
     endif
-else ifeq ($(PLATFORM),WEB) # Web always optimized (TODO check emscripten debug page)
-    OPT_FLAGS := -Os
+else ifeq ($(PLATFORM),WEB) # (TODO check emscripten debug page)
+    OPTIMIZE_FLAGS := -Os
 else ifeq ($(CONFIG),RELEASE)
-    OPT_FLAGS := -O2
+    OPTIMIZE_FLAGS := -O2
 else ifeq ($(CONFIG),DEBUG)
-    DEBUG_FLAGS := -g -O0
+    OPTIMIZE_FLAGS := -g -O0
 endif
 
 # Define C compiler flags
@@ -110,19 +113,18 @@ CFLAGS += -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 # -----------------------------------------------------------------------------
 # /W3    Set warning level to 3 (default is 1, max is 4)
 # /MD    Link against MSVCRT.DLL (multithreaded DLL runtime)
-# /Zi    Generate complete debugging information (.pdb files)
 ifeq ($(CC),cl)
     CFLAGS := /W3 /MD
 endif
 
 # Define C preprocessor flags and linker flags
 CPPFLAGS  := -I"$(RAYLIB_INC)" -I"$(INC_DIR)"
-PLATFLAG  := -DPLATFORM_$(PLAT)
+PLATFORM_FLAG  := -DPLATFORM_$(PLAT)
 ifeq ($(CC),cl)
     CPPFLAGS := /I"$(RAYLIB_INC)" /I"$(INC_DIR)"
     LINKFLAGS := /link /LIBPATH:"$(RAYLIB_LIB)/windows-msvc" \
                   raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
-    PLATFLAG := /DPLATFORM_$(PLAT)
+    PLATFORM_FLAG := /DPLATFORM_$(PLAT)
     ifeq ($(CONFIG),DEBUG)
         LINKFLAGS += /DEBUG
     endif
@@ -159,16 +161,16 @@ endif
 # Define output flags
 ifeq ($(CC),cl)
     NOLINK := /c
-    OBJOUT := /Fo
-    OUTFLAG := /Fe:$(OUTPUT)$(EXTENSION)
+    OBJ_OUT := /Fo
+    OUT_FLAG := /Fe:$(OUTPUT)$(EXTENSION)
 else
     NOLINK := -c
-    OBJOUT := -o
-    OUTFLAG := -o $(OUTPUT)$(EXTENSION)
+    OBJ_OUT := -o
+    OUT_FLAG := -o $(OUTPUT)$(EXTENSION)
 endif
 
 # Combine CFLAGS
-CFLAGS += $(OPT_FLAGS) $(DEBUG_FLAGS) $(CPPFLAGS) $(PLATFLAG)
+CFLAGS += $(OPTIMIZE_FLAGS) $(CPPFLAGS) $(PLATFORM_FLAG)
 
 # ==============================================================================
 # Targets
@@ -184,12 +186,11 @@ CFLAGS += $(OPT_FLAGS) $(DEBUG_FLAGS) $(CPPFLAGS) $(PLATFLAG)
 
 # # Link object files into final executable
 # $(OUTPUT)$(EXTENSION): $(OBJS)
-# 	$(CC) $(foreach obj,$(OBJS),"$(obj)") $(OUTFLAG) $(LINKFLAGS)
+# 	$(CC) $(OBJS) $(OUT_FLAG) $(LINKFLAGS)
 
 # # Compile c files to object files
-# VPATH := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
 # $(OBJ_DIR)/%$(OBJ_EXT): %.c $(HEADERS)
-# 	$(CC) $(NOLINK) $(CFLAGS) "$<" $(OBJOUT)"$@"
+# 	$(CC) $(NOLINK) $(CFLAGS) "$<" $(OBJ_OUT)"$@"
 
 # # Create folder for object files
 # $(OBJ_DIR):
@@ -199,7 +200,7 @@ CFLAGS += $(OPT_FLAGS) $(DEBUG_FLAGS) $(CPPFLAGS) $(PLATFLAG)
 
 # Compile everything at once
 all:
-	$(CC) $(CFLAGS) $(foreach f,$(SRC),"$(f)") $(OUTFLAG) $(LINKFLAGS)
+	$(CC) $(CFLAGS) $(SRC) $(OUT_FLAG) $(LINKFLAGS)
 
 # Build with clang
 clang:
