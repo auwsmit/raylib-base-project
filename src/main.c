@@ -108,7 +108,6 @@ void UpdateDrawFrame(void)
     ProcessUserInput();
     HandleToggleFullscreen();
     UpdateCameraViewport();
-    input.touchMode = true;
 
     switch(game.currentScreen)
     {
