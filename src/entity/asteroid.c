@@ -101,7 +101,7 @@ void SplitAsteroid(unsigned int rockIdx)
         CreateAsteroid(splitSize, spawnPosA, angle, splitColor);
         CreateAsteroid(splitSize, spawnPosB, angle + 180, splitColor);
         unsigned int splitRocksAdd = 1;
-        for (int i = splitSize + 1; i >= 0; i--)
+        for (int i = (int)splitSize + 1; i >= 0; i--)
             splitRocksAdd *= 2;
         game.rockLimit -= splitRocksAdd;
     }

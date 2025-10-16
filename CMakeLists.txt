@@ -46,9 +46,9 @@ endif()
 # Setup Project
 # --------------------------------------------------------------------------------
 
-file(GLOB SRC_FILES code/*.c code/module/*.c code/entity/*.c)
+file(GLOB SRC_FILES src/*.c src/module/*.c src/entity/*.c)
 add_executable(${OUTPUT_NAME} ${SRC_FILES})
-target_include_directories(${OUTPUT_NAME} PRIVATE code/include)
+target_include_directories(${OUTPUT_NAME} PRIVATE src/include)
 target_link_libraries(${OUTPUT_NAME} ${LIBRARIES})
 
 # Cross-platform Configurations
@@ -62,8 +62,10 @@ set_target_properties(${OUTPUT_NAME} # working directory set to repo directory
 
 # Web
 if (${PLATFORM} STREQUAL "Web")
-  set_target_properties(${OUTPUT_NAME} PROPERTIES SUFFIX ".html") # Tell Emscripten to build an html file.
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${CMAKE_SOURCE_DIR}/shell.html -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s GL_ENABLE_GET_PROC_ADDRESS=1 -sEXPORTED_FUNCTIONS=_main,requestFullscreen --preload-file ${CMAKE_SOURCE_DIR}/assets@assets")
+  set_target_properties(${OUTPUT_NAME} PROPERTIES SUFFIX ".html")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion")
+  set(CMAKE_C_FLAGS_RELEASE "-Os" CACHE STRING "" FORCE)
+  set(CMAKE_EXE_LINKER_FLAGS "--shell-file ${CMAKE_SOURCE_DIR}/shell.html -sUSE_GLFW=3 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sTOTAL_MEMORY=67108864 -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 --preload-file ${CMAKE_SOURCE_DIR}/assets@assets")
 endif()
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)

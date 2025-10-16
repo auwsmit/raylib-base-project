@@ -17,6 +17,24 @@
 # -----------------------------------------------------------------------------
 
 # =============================================================================
+# Project Config
+# =============================================================================
+
+# Output executable name
+OUTPUT  := asteroids
+
+# Source code, headers, and object file paths
+SRC_DIR := src
+INC_DIR := $(SRC_DIR)/include
+HEADERS := $(wildcard $(INC_DIR)/*.h)
+SRC     := $(wildcard $(SRC_DIR)/*.c) \
+           $(wildcard $(SRC_DIR)/module/*.c) \
+           $(wildcard $(SRC_DIR)/entity/*.c)
+
+# Specify paths for make to search for files
+VPATH   := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
+
+# =============================================================================
 # Platform Settings
 # =============================================================================
 
@@ -37,28 +55,8 @@ else
     EXTENSION :=
     OBJ_EXT   := .o
 endif
-
-# =============================================================================
-# Project Config
-# =============================================================================
-
-# Output executable name
-OUTPUT  := asteroids
-
-# Source code, headers, and object file paths
-RAYLIB_INC := raylib/include
-RAYLIB_LIB := raylib/lib
-SRC_DIR := code
-INC_DIR := $(SRC_DIR)/include
-HEADERS := $(wildcard $(INC_DIR)/*.h)
-SRC     := $(wildcard $(SRC_DIR)/*.c) \
-           $(wildcard $(SRC_DIR)/module/*.c) \
-           $(wildcard $(SRC_DIR)/entity/*.c)
 OBJ_DIR := $(SRC_DIR)/obj
-OBJS    := $(addprefix $(OBJ_DIR)/, $(notdir $(SRC:.c=$(OBJ_EXT))))
-
-# Specify paths for make to search for files
-VPATH   := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
+OBJS := $(addprefix $(OBJ_DIR)/, $(notdir $(SRC:.c=$(OBJ_EXT))))
 
 # =============================================================================
 # Compiler Settings
@@ -100,7 +98,7 @@ endif
 #  -Wno-missing-braces  ignore invalid warning (GCC bug 53119)
 #  -Wno-unused-value    ignore unused return values of some functions (i.e. fread())
 #  -D_DEFAULT_SOURCE    use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
-CFLAGS := -std=c99 -D_DEFAULT_SOURCE -Wall -Wno-missing-braces -Wunused-result
+CFLAGS := -std=c99 -Wall -Wno-missing-braces -Wunused-result
 # Additional flags for compiler (if desired)
 #  -Wextra                enables some extra warning flags that are not enabled by -Wall
 #  -Wmissing-prototypes   warn if a global function is defined without a previous prototype declaration
@@ -118,18 +116,18 @@ ifeq ($(CC),cl)
 endif
 
 # Define C preprocessor flags and linker flags
-CPPFLAGS  := -I"$(RAYLIB_INC)" -I"$(INC_DIR)"
+CPPFLAGS  := -I"raylib/include" -I"$(INC_DIR)" -D_DEFAULT_SOURCE
 PLATFORM_FLAG  := -DPLATFORM_$(PLAT)
 ifeq ($(CC),cl)
-    CPPFLAGS := /I"$(RAYLIB_INC)" /I"$(INC_DIR)"
-    LINKFLAGS := /link /LIBPATH:"$(RAYLIB_LIB)/windows-msvc" \
+    CPPFLAGS := /I"raylib/include" /I"$(INC_DIR)"
+    LINKFLAGS := /link /LIBPATH:"raylib/lib/windows-msvc" \
                   raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
     PLATFORM_FLAG := /DPLATFORM_$(PLAT)
     ifeq ($(CONFIG),DEBUG)
         LINKFLAGS += /DEBUG
     endif
 else ifeq ($(OS),WINDOWS)
-    LINKFLAGS  := -lraylib -L"$(RAYLIB_LIB)/windows" -lopengl32 -lgdi32 -lwinmm
+    LINKFLAGS  := -lraylib -L"raylib/lib/windows" -lopengl32 -lgdi32 -lwinmm
 else ifeq ($(OS),LINUX)
     LINKFLAGS  := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 endif
@@ -152,7 +150,7 @@ ifeq ($(PLATFORM),WEB)
     # --memory-init-file 0        to avoid an external memory initialization code file (.mem)
     # --preload-file resources    specify a resources folder for data compilation
     # --source-map-base           allow debugging in browser with source map
-    LINKFLAGS  := -lraylib -L"$(RAYLIB_LIB)/web" --shell-file shell.html \
+    LINKFLAGS  := -lraylib -L"raylib/lib/web" --shell-file shell.html \
     -sUSE_GLFW=3 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sTOTAL_MEMORY=67108864 \
     -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 \
     --preload-file assets
@@ -179,9 +177,13 @@ CFLAGS += $(OPTIMIZE_FLAGS) $(CPPFLAGS) $(PLATFORM_FLAG)
 # let `make` know that these aren't files
 .PHONY: all clang msvc web gh-pages clean
 
-# # Incremental build: (not really needed at this scale, but still good to know)
-# # -----------------------------------------------------------------------------
-# # Compile for desktop with no arguments/platform specified
+# Default: Compile all files for desktop
+all:
+	$(CC) $(CFLAGS) $(SRC) $(OUT_FLAG) $(LINKFLAGS)
+
+# Incremental build: Disabled for small projects
+# -----------------------------------------------------------------------------
+# # Default: Compile for desktop
 # all: $(OUTPUT)$(EXTENSION)
 
 # # Link object files into final executable
@@ -196,11 +198,7 @@ CFLAGS += $(OPTIMIZE_FLAGS) $(CPPFLAGS) $(PLATFORM_FLAG)
 # $(OBJ_DIR):
 # 	mkdir -p $(OBJ_DIR)
 # $(OBJS): | $(OBJ_DIR)
-# # -----------------------------------------------------------------------------
-
-# Compile everything at once
-all:
-	$(CC) $(CFLAGS) $(SRC) $(OUT_FLAG) $(LINKFLAGS)
+# -----------------------------------------------------------------------------
 
 # Build with clang
 clang:

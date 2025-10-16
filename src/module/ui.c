@@ -56,10 +56,10 @@ void InitUiState(void)
     const int touchInputPadding = UI_EDGE_PADDING*2;
 
     // Pause button
-    int pauseTextLength = MeasureText("Pause", UI_FONT_SIZE_EDGE*0.75f);
+    int pauseTextLength = MeasureText("Pause", (int)(UI_FONT_SIZE_EDGE*0.75f));
     float pausePosX = (float)(VIRTUAL_WIDTH - pauseTextLength)/2.5f;
     float pausePosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
-    defaults.gamepad.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_FONT_SIZE_EDGE*0.75f);
+    defaults.gamepad.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, (int)(UI_FONT_SIZE_EDGE*0.75f));
 
     // Thrust button
     int flyTextLength = MeasureText("Thrust", UI_FONT_SIZE_EDGE);
@@ -119,7 +119,7 @@ UiButton InitUiButton(char *text, int buttonId, float textPosX, float textPosY, 
 
 UiButton *CreateUiMenuButton(char *text, UiMenu *menu, float textPosX, float textPosY, int fontSize)
 {
-    UiButton button = InitUiButton(text, menu->buttonCount, textPosX, textPosY, fontSize);
+    UiButton button = InitUiButton(text, (int)menu->buttonCount, textPosX, textPosY, fontSize);
     menu->buttonCount++;
     menu->buttons = MemRealloc(menu->buttons, menu->buttonCount*sizeof(UiButton));
     menu->buttons[menu->buttonCount - 1] = button;
@@ -517,13 +517,13 @@ void DrawUiFrame(void)
 
         // Draw level indicator
         const char *levelText = TextFormat("Level %i", game.currentLevel);
-        unsigned int textLength = MeasureText(levelText, UI_FONT_SIZE_EDGE);
+        int textLength = MeasureText(levelText, UI_FONT_SIZE_EDGE);
         DrawText(levelText,
                  VIRTUAL_WIDTH - textLength - UI_EDGE_PADDING, UI_EDGE_PADDING,
                  UI_FONT_SIZE_EDGE, RAYWHITE);
 
         // 10 asteroids or less text
-        int totalRocksRemaining = game.rockLimit - game.eliminatedCount;
+        unsigned int totalRocksRemaining = game.rockLimit - game.eliminatedCount;
         if (totalRocksRemaining <= 10)
         {
             const char* remainText = TextFormat("Remaining: %i", totalRocksRemaining);

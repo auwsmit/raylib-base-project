@@ -39,10 +39,11 @@ set script_dir=%~dp0
 :: ----------------------------------------------------------------------------
 set output=asteroids
 set cmake_build_dir=build
+set source_dir=src
 set source_code=
-for %%f in ("%script_dir%code\*.c") do set source_code=!source_code! "%%f"
-for %%f in ("%script_dir%code\module\*.c") do set source_code=!source_code! "%%f"
-for %%f in ("%script_dir%code\entity\*.c") do set source_code=!source_code! "%%f"
+for %%f in ("%script_dir%%source_dir%\*.c") do set source_code=!source_code! "%%f"
+for %%f in ("%script_dir%%source_dir%\module\*.c") do set source_code=!source_code! "%%f"
+for %%f in ("%script_dir%%source_dir%\entity\*.c") do set source_code=!source_code! "%%f"
 
 :: Unpack Arguments
 :: ----------------------------------------------------------------------------
@@ -106,23 +107,23 @@ if "%cmake%"=="1"   (
 
 :: Compile/Link Line Definitions
 :: ----------------------------------------------------------------------------
-set cc_common=   -I"raylib\include" -I"code\include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
+set cc_common=   -I"raylib\include" -I"%source_dir%\include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 set cc_debug=    -g -O0
 set cc_release=  -O2
 set cc_platform= -DPLATFORM_DESKTOP
 set cc_link=     -lraylib -L"raylib\lib\windows" -lopengl32 -lgdi32 -lwinmm
 set cc_out=      -o
 
-set cl_common=   cl /I"raylib\include" /I"code\include" /W3 /MD
-set cl_debug=    -Od /Zi
-set cl_release=  -O2
-set cl_platform= -DPLATFORM_DESKTOP
+set cl_common=   cl /I"raylib\include" /I"%source_dir%\include" /W3 /MD
+set cl_debug=    /Od /Zi
+set cl_release=  /O2
+set cl_platform= /DPLATFORM_DESKTOP
 set cl_link=     /link /INCREMENTAL:NO /LIBPATH:"raylib\lib\windows-msvc" raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
 set cl_link_debug= /DEBUG
 set cl_out=      /Fe:
 
 set web_release=  -Os
-set web_platform= -DPLATFORM_DESKTOP
+set web_platform= -DPLATFORM_WEB
 set web_link=     -lraylib -L"raylib\lib\web" --shell-file shell.html -sUSE_GLFW=3 -sTOTAL_MEMORY=67108864 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 --preload-file assets
 
 :: Choose Compile/Link Lines
@@ -130,6 +131,7 @@ set web_link=     -lraylib -L"raylib\lib\web" --shell-file shell.html -sUSE_GLFW
 if     "%gcc%"=="1"   set compile=gcc %cc_common%
 if     "%clang%"=="1" set compile=clang %cc_common%
 if     "%web%"=="1"   set compile=emcc %cc_common%
+if     "%msvc%"=="1"  set compile=%cl_common%
 if     "%web%"=="1"   set compile_platform=%web_platform%
 if not "%web%"=="1"   set compile_platform=%cc_platform%
 if     "%web%"=="1"                      set compile_link=%web_link%
@@ -137,7 +139,6 @@ if not "%web%"=="1" if not "%msvc%"=="1" set compile_link=%cc_link%
 if     "%web%"=="1"                      set compile_out=%cc_out% %output%.html
 if not "%web%"=="1" if not "%msvc%"=="1" set compile_out=%cc_out% %output%.exe
 
-if "%msvc%"=="1"     set compile=%cl_common%
 if "%debug%"=="1"    set cl_link=%cl_link% %cl_link_debug%
 if "%msvc%"=="1"     set compile_link=%cl_link%
 if "%msvc%"=="1"     set compile_out=%cl_out%%output%.exe

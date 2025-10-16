@@ -34,10 +34,11 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 # -----------------------------------------------------------------------------
 output=asteroids
 cmake_build_dir=build
+source_dir=src
 source_code=
-for f in "$script_dir/code"/*.c; do source_code="$source_code \"$f\""; done
-for f in "$script_dir/code/module"/*.c; do source_code="$source_code \"$f\""; done
-for f in "$script_dir/code/entity"/*.c; do source_code="$source_code \"$f\""; done
+for f in "$script_dir/$source_dir"/*.c; do source_code="$source_code \"$f\""; done
+for f in "$script_dir/$source_dir/module"/*.c; do source_code="$source_code \"$f\""; done
+for f in "$script_dir/$source_dir/entity"/*.c; do source_code="$source_code \"$f\""; done
 
 # Script Entry Point
 main()
@@ -107,7 +108,7 @@ script_choose_cmake_lines()
 script_choose_simple_lines()
 {
     # Line Definitions
-    cc_common='-I"raylib/include" -I"code/include" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion'
+    cc_common="-I\"raylib/include\" -I\"${source_dir}/include\" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion"
     cc_debug='-g -O0'
     cc_release='-O2'
     cc_platform='-DPLATFORM_DESKTOP'
