@@ -167,6 +167,7 @@ void FreeUiState(void)
 
     UnloadTexture(ui.gamepad.fly.icon);
     UnloadTexture(ui.gamepad.shoot.icon);
+    UnloadTexture(ui.gamepad.pause.icon);
 }
 
 // Update / User Input
@@ -355,12 +356,13 @@ void UpdateUiTouchInput(UiButton *button)
     else return;
 
     int touchIdx = CheckCollisionTouchCircle(button->position, button->radius);
-    bool isButtonTapped = (touchIdx != -1);
-    if (isButtonTapped)
-        SetTouchPointButton(touchIdx, button->buttonId);
+    bool isValidPress = (touchIdx != -1);
+    if (isValidPress && (buttonInputAction == INPUT_ACTION_PAUSE))
+         isValidPress = IsTouchPointTapped(touchIdx);
+    if (isValidPress) SetTouchPointButton(touchIdx, button->buttonId);
 
-    SetTouchInputAction(buttonInputAction, isButtonTapped);
-    button->clicked = isButtonTapped;
+    SetTouchInputAction(buttonInputAction, isValidPress);
+    button->clicked = isValidPress;
 }
 
 void UpdateUiAnalogStick(UiAnalogStick *stick)
@@ -692,7 +694,7 @@ void DrawCenterText(void)
     }
 }
 
-void DrawDebugInfo()
+void DrawDebugInfo(void)
 {
     Color touchColors[10] = { RED, BLUE, GREEN, YELLOW, ORANGE, PURPLE, BROWN, WHITE, GRAY, MAGENTA };
     for (int i = 0; i < input.touchCount; ++i)
