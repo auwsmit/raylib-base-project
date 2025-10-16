@@ -38,9 +38,7 @@ VPATH   := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
 # Platform Settings
 # =============================================================================
 
-PLAT := DESKTOP
 ifeq ($(PLATFORM),WEB)
-    PLAT := WEB
     EXTENSION := .html
     OBJ_EXT   := .o
 else ifeq ($(OS),Windows_NT)
@@ -48,9 +46,10 @@ else ifeq ($(OS),Windows_NT)
     EXTENSION := .exe
     OBJ_EXT   := .obj
 else
-    UNAME_S  := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
+    ifeq ($(shell uname -s),Linux)
         OS := LINUX
+    else ifeq ($(shell uname -s),Darwin)
+        OS := MAC
     endif
     EXTENSION :=
     OBJ_EXT   := .o
@@ -117,19 +116,21 @@ endif
 
 # Define C preprocessor flags and linker flags
 CPPFLAGS  := -I"raylib/include" -I"$(INC_DIR)" -D_DEFAULT_SOURCE
-PLATFORM_FLAG  := -DPLATFORM_$(PLAT)
+PLATFORM_FLAG  := -DPLATFORM_DESKTOP
 ifeq ($(CC),cl)
     CPPFLAGS := /I"raylib/include" /I"$(INC_DIR)"
     LINKFLAGS := /link /LIBPATH:"raylib/lib/windows-msvc" \
                   raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
-    PLATFORM_FLAG := /DPLATFORM_$(PLAT)
     ifeq ($(CONFIG),DEBUG)
         LINKFLAGS += /DEBUG
     endif
+    PLATFORM_FLAG := /DPLATFORM_DESKTOP
 else ifeq ($(OS),WINDOWS)
     LINKFLAGS  := -lraylib -L"raylib/lib/windows" -lopengl32 -lgdi32 -lwinmm
 else ifeq ($(OS),LINUX)
     LINKFLAGS  := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+else ifeq ($(OS),MAC)
+    LINKFLAGS  := -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 endif
 ifeq ($(PLATFORM),WEB)
     # Web (emscripten emcc) Flags
@@ -154,6 +155,7 @@ ifeq ($(PLATFORM),WEB)
     -sUSE_GLFW=3 -sFORCE_FILESYSTEM=1 -sASYNCIFY -sTOTAL_MEMORY=67108864 \
     -sEXPORTED_FUNCTIONS=_main,requestFullscreen -sEXPORTED_RUNTIME_METHODS=HEAPF32 \
     --preload-file assets
+    PLATFORM_FLAG := -DPLATFORM_WEB
 endif
 
 # Define output flags
