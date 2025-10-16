@@ -141,8 +141,11 @@ void ProcessUserInput(void)
         for (int i = tCount; i < INPUT_MAX_TOUCH_POINTS; i++)
             input.touchPoints[i].pressedCurrentFrame = false;
 
-        // Update touch input buttons
-        ProcessVirtualGamepad();
+        // Process touch gamepad
+        UpdateUiTouchInput(&ui.gamepad.pause);
+        UpdateUiTouchInput(&ui.gamepad.shoot);
+        UpdateUiTouchInput(&ui.gamepad.fly);
+        UpdateUiAnalogStick(&ui.gamepad.stick);
     }
 
     // Check input mappings
@@ -165,14 +168,6 @@ void ProcessUserInput(void)
         input.player.thrustMouse = IsInputActionMouseDown(INPUT_ACTION_THRUST);
         input.player.shootMouse =  IsInputActionMouseDown(INPUT_ACTION_SHOOT);
     }
-}
-
-void ProcessVirtualGamepad(void)
-{
-    UpdateUiTouchInput(&ui.gamepad.pause);
-    UpdateUiTouchInput(&ui.gamepad.shoot);
-    UpdateUiTouchInput(&ui.gamepad.fly);
-    UpdateUiAnalogStick(&ui.gamepad.stick);
 }
 
 void CancelUserInput(void)

@@ -26,9 +26,16 @@ void InitUiState(void)
 
     // Title menu
     // ----------------------------------------------------------------------------
-    defaults.title[0] = InitUiTitle("Asteroids");
-    defaults.title[1] = InitUiTitle("Remake");
-
+    int titleWidth = MeasureText("Asteroids", UI_TITLE_SIZE);
+    float titlePosX = (VIRTUAL_WIDTH - (float)titleWidth)/2;
+    float titlePosY = UI_TITLE_TOP_PADDING;
+#if defined(PLATFORM_WEB) // different spacing for web
+    titlePosY += UI_TITLE_BUTTON_SIZE;
+#endif
+    defaults.title[0] = InitUiButton("Asteroids", -1, titlePosX, titlePosY, UI_TITLE_SIZE);
+    titleWidth = MeasureText("Remake", UI_TITLE_SIZE);
+    titlePosX = (VIRTUAL_WIDTH - (float)titleWidth)/2;
+    defaults.title[1] = InitUiButton("Remake", -1, titlePosX, titlePosY + UI_TITLE_SIZE + 10, UI_TITLE_SIZE);
     UiMenu *titleMenu = &defaults.menus[UI_MENU_TITLE];
 
     float startPosX = VIRTUAL_WIDTH/2 - (float)MeasureText("Start", UI_TITLE_BUTTON_SIZE)/2;
@@ -53,38 +60,41 @@ void InitUiState(void)
 
     // Touch input buttons (virtual gamepad)
     // ----------------------------------------------------------------------------
-    const int touchInputPadding = UI_EDGE_PADDING*2;
-
-    // Pause button
-    int pauseTextLength = MeasureText("Pause", (int)(UI_FONT_SIZE_EDGE*0.75f));
-    float pausePosX = (float)(VIRTUAL_WIDTH - pauseTextLength)/2.5f;
-    float pausePosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
-    defaults.gamepad.pause = InitUiButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, (int)(UI_FONT_SIZE_EDGE*0.75f));
+    const int touchInputPadding = 160;
 
     // Thrust button
-    int flyTextLength = MeasureText("Thrust", UI_FONT_SIZE_EDGE);
-    float flyPosX = (float)(VIRTUAL_WIDTH - flyTextLength - touchInputPadding - UI_BUTTON_PADDING);
-    float flyPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
-    defaults.gamepad.fly = InitUiButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_FONT_SIZE_EDGE);
+    float flyPosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS - touchInputPadding;
+    float flyPosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS - touchInputPadding*1.75f;
+    defaults.gamepad.fly = InitUiInputButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_INPUT_RADIUS);
+    defaults.gamepad.fly.icon = LoadTexture("assets/icon_button_a.png");
 
     // Shoot button
-    int shootTextLength = MeasureText("Shoot", UI_FONT_SIZE_EDGE);
-    float shootPosX = (float)(flyPosX - shootTextLength - touchInputPadding - UI_BUTTON_PADDING);
-    float shootPosY = (float)(VIRTUAL_HEIGHT - UI_FONT_SIZE_EDGE - touchInputPadding - UI_BUTTON_PADDING);
-    defaults.gamepad.shoot = InitUiButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_FONT_SIZE_EDGE);
+    float shootPosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS - touchInputPadding*2;
+    float shootPosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS - touchInputPadding;
+    defaults.gamepad.shoot = InitUiInputButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_INPUT_RADIUS);
+    defaults.gamepad.shoot.icon = LoadTexture("assets/icon_button_x.png");
 
     // Analog stick
-    defaults.gamepad.stick.centerPos.x = UI_STICK_RADIUS + touchInputPadding;
-    defaults.gamepad.stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - touchInputPadding;
-    defaults.gamepad.stick.stickPos = defaults.gamepad.stick.centerPos;
-    defaults.gamepad.stick.centerRadius = UI_STICK_RADIUS;
-    defaults.gamepad.stick.stickRadius = UI_STICK_RADIUS/2;
-    defaults.gamepad.stick.lastTouchId = -1;
+    UiAnalogStick stick = { 0 };
+    stick.centerPos.x = UI_STICK_RADIUS + touchInputPadding;
+    stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - touchInputPadding;
+    stick.stickPos = defaults.gamepad.stick.centerPos;
+    stick.centerRadius = UI_STICK_RADIUS;
+    stick.stickRadius = UI_STICK_RADIUS/2;
+    stick.lastTouchId = -1;
+    defaults.gamepad.stick = stick;
+
+    // Pause button
+    float pausePosX = (stick.centerPos.x + shootPosX)/2;
+    float pausePosY = VIRTUAL_HEIGHT - UI_STICK_RADIUS - touchInputPadding;
+    defaults.gamepad.pause = InitUiInputButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_INPUT_RADIUS*0.75f);
+    defaults.gamepad.pause.icon = LoadTexture("assets/icon_pause.png");
+    defaults.gamepad.pause.iconScale *= 0.75f;
 
     ui = defaults;
 }
 
-UiButton InitUiTitle(char *text)
+UiButton InitUiTitle(char *text, bool nextLine)
 {
     int fontSize = UI_TITLE_SIZE;
     int textWidth = MeasureText(text, fontSize);
@@ -94,12 +104,10 @@ UiButton InitUiTitle(char *text)
     titlePosY += UI_TITLE_BUTTON_SIZE;
 #endif
 
-    static bool previousTitleLine = false;
-    if (previousTitleLine)
+    if (nextLine)
         titlePosY += UI_TITLE_SIZE + 10;
 
     UiButton title = InitUiButton(text, -1, titlePosX, titlePosY, fontSize);
-    previousTitleLine = true;
 
     return title;
 }
@@ -110,6 +118,20 @@ UiButton InitUiButton(char *text, int buttonId, float textPosX, float textPosY, 
         .text = text,
         .buttonId = buttonId,
         .fontSize = fontSize,
+        .position = { textPosX, textPosY },
+        .color = RAYWHITE
+    };
+
+    return button;
+}
+
+UiButton InitUiInputButton(char *text, int buttonId, float textPosX, float textPosY, float radius)
+{
+    UiButton button = {
+        .text = text,
+        .iconScale = 0.75f,
+        .radius = radius,
+        .buttonId = buttonId,
         .position = { textPosX, textPosY },
         .color = RAYWHITE
     };
@@ -142,6 +164,9 @@ void FreeUiState(void)
 {
     for (unsigned int i = 0; i < ARRAY_SIZE(ui.menus); i++)
         MemFree(ui.menus[i].buttons);
+
+    UnloadTexture(ui.gamepad.fly.icon);
+    UnloadTexture(ui.gamepad.shoot.icon);
 }
 
 // Update / User Input
@@ -260,25 +285,6 @@ void UpdateUiMenuTraverse(void)
     ui.firstFrame = false;
 }
 
-
-// void UpdateUiButtonMouseHover(UiButton *button) // Disabled+Unused
-// {
-//     if (!input.mouse.moved) return;
-
-//     if (IsMouseWithinUiButton(button))
-//     {
-//         // if (!button->mouseHovered)
-//         //     PlaySound(game.sounds.menu);
-//         button->mouseHovered = true;
-//         ui.mouseInUse = true;
-//     }
-//     else
-//     {
-//         button->mouseHovered = false;
-//         ui.mouseInUse = false;
-//     }
-// }
-
 void UpdateUiButtonSelect(UiButton *button)
 {
     int touchIdx = IsTouchWithinUiButton(button);
@@ -348,7 +354,7 @@ void UpdateUiTouchInput(UiButton *button)
         buttonInputAction = INPUT_ACTION_THRUST;
     else return;
 
-    int touchIdx = IsTouchWithinUiButton(button);
+    int touchIdx = CheckCollisionTouchCircle(button->position, button->radius);
     bool isButtonTapped = (touchIdx != -1);
     if (isButtonTapped)
         SetTouchPointButton(touchIdx, button->buttonId);
@@ -430,7 +436,7 @@ bool IsMouseWithinUiButton(UiButton *button)
 {
     Vector2 mousePos = input.mouse.position;
 
-    int padding = UI_BUTTON_PADDING; // extra clickable area around the text
+    int padding = UI_BUTTON_THICKNESS; // extra clickable area around the text
     int buttonWidth = MeasureText(button->text, button->fontSize);
     if ((mousePos.x >= button->position.x - padding) &&
         (mousePos.x <= button->position.x + buttonWidth + padding) &&
@@ -445,10 +451,10 @@ int IsTouchWithinUiButton(UiButton *button)
 {
     int buttonWidth = MeasureText(button->text, button->fontSize);
     Rectangle buttonRect = {
-       (float)button->position.x - UI_BUTTON_PADDING,
+       (float)button->position.x - UI_BUTTON_THICKNESS,
        (float)button->position.y,
-       (float)buttonWidth + UI_BUTTON_PADDING*2,
-       (float)button->fontSize + UI_BUTTON_PADDING*2, };
+       (float)buttonWidth + UI_BUTTON_THICKNESS*2,
+       (float)button->fontSize + UI_BUTTON_THICKNESS*2, };
 
     return CheckCollisionTouchRec(buttonRect);
 }
@@ -493,19 +499,9 @@ void DrawUiFrame(void)
     }
     else if (game.currentScreen == SCREEN_GAMEPLAY && input.touchMode) // Touch controls
     {
-        // Draw pause button
-        DrawUiOutline(&ui.gamepad.pause);
-        DrawUiElement(&ui.gamepad.pause);
-
-        // Draw fly input button
-        DrawUiOutline(&ui.gamepad.fly);
-        DrawUiElement(&ui.gamepad.fly);
-
-        // Draw fly input button
-        DrawUiOutline(&ui.gamepad.shoot);
-        DrawUiElement(&ui.gamepad.shoot);
-
-        // Draw analog stick
+        DrawUiInputButton(&ui.gamepad.pause);
+        DrawUiInputButton(&ui.gamepad.fly);
+        DrawUiInputButton(&ui.gamepad.shoot);
         DrawUiAnalogStick(&ui.gamepad.stick);
     }
 
@@ -537,44 +533,8 @@ void DrawUiFrame(void)
         DrawCenterText();
     }
 
-    // Debug:
-    // TODO make toggleable hotkey for debug overlay
-    if (!game.debugMode) return;
-    Color touchColors[10] = { RED, BLUE, GREEN, YELLOW, ORANGE, PURPLE, BROWN, WHITE, GRAY, MAGENTA };
-    for (int i = 0; i < input.touchCount; ++i)
-    {
-        DrawCircleV(input.touchPoints[i].position, 155.0f, touchColors[i]);
-    }
-
-    const int textSize = 30;
-    int textY = 150;
-    DrawText(TextFormat("%i touchCount", input.touchCount), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    for (int i = 0; i < 8; i++)
-    {
-        DrawText(TextFormat("touch %i x,y: %.0f,%.0f id: %i", i+1, input.touchPoints[i].position.x, input.touchPoints[i].position.y, input.touchPoints[i].id), 0, textY, textSize, RAYWHITE);
-        textY += textSize;
-    }
-
-    /*
-    Vector2 mousePos = input.mouse.position;
-    DrawText(TextFormat("mouse: %3.0f, %3.0f", mousePos.x, mousePos.y), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    if (game.touchCount > 0)
-    {
-        for (int i = 0; i < game.touchCount; i++)
-        {
-            DrawText(TextFormat("touch %i: %3.0f, %3.0f", i, GetTouchPosition(i).x, GetTouchPosition(i).y), 0, textY, textSize, RAYWHITE);
-            textY += textSize;
-        }
-    }
-    DrawText(TextFormat("%2i rock total", game.rockLimit), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    DrawText(TextFormat("%2i remaining", game.rockLimit - game.eliminatedCount), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    DrawText(TextFormat("speed: %3.0f", Vector2Length(game.ship.velocity)), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    */
+    // Debug info
+    if (game.debugMode) DrawDebugInfo();
 }
 
 void DrawUiElement(UiButton *button)
@@ -599,7 +559,7 @@ void DrawUiCursor(UiButton *selectedButton)
 
 void DrawUiOutline(UiButton *selectedButton)
 {
-    int padding         = UI_BUTTON_PADDING;
+    int padding         = UI_BUTTON_THICKNESS;
     int outlineWidth    = 4;
     int buttonWidth     = MeasureText(selectedButton->text, selectedButton->fontSize);
     int buttonHeight    = selectedButton->fontSize;
@@ -625,10 +585,27 @@ void DrawUiOutline(UiButton *selectedButton)
                   highlightHeight - outlineWidth*2, boxColor);
 }
 
+void DrawUiInputButton(UiButton *button)
+{
+    Color buttonColor = RAYWHITE;
+    if (button->clicked)
+        buttonColor = ColorAlpha(buttonColor, UI_TRANSPARENCY*3);
+    else
+        buttonColor = ColorAlpha(buttonColor, UI_TRANSPARENCY);
+    DrawCircleV(button->position, button->radius, buttonColor);
+    DrawRing(button->position, button->radius - 2, button->radius + 2,
+             0, 360, 0, RAYWHITE);
+    Vector2 iconPosition = {
+        button->position.x - (button->icon.width*0.5f*button->iconScale),
+        button->position.y - (button->icon.width*0.5f*button->iconScale)
+    };
+    DrawTextureEx(button->icon, iconPosition, 0.0f, button->iconScale, WHITE);
+}
+
 void DrawUiAnalogStick(UiAnalogStick *stick)
 {
     DrawCircleV(stick->centerPos, stick->centerRadius, ColorAlpha(RAYWHITE, UI_TRANSPARENCY));
-    DrawRing(stick->centerPos, stick->centerRadius - 4, stick->centerRadius + 4,
+    DrawRing(stick->centerPos, stick->centerRadius - 2, stick->centerRadius + 2,
              0, 360, 0, RAYWHITE);
     DrawCircleV(stick->stickPos, stick->stickRadius, GRAY);
 }
@@ -713,4 +690,41 @@ void DrawCenterText(void)
                  VIRTUAL_HEIGHT/2 - UI_FONT_SIZE_CENTER/2,
                  UI_FONT_SIZE_CENTER, fadeColor);
     }
+}
+
+void DrawDebugInfo()
+{
+    Color touchColors[10] = { RED, BLUE, GREEN, YELLOW, ORANGE, PURPLE, BROWN, WHITE, GRAY, MAGENTA };
+    for (int i = 0; i < input.touchCount; ++i)
+    {
+        DrawCircleV(input.touchPoints[i].position, 155.0f, touchColors[i]);
+    }
+
+    const int textSize = 30;
+    int textY = 150;
+    DrawText(TextFormat("%i touchCount", input.touchCount), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
+    for (int i = 0; i < 8; i++)
+    {
+        DrawText(TextFormat("touch %i x,y: %.0f,%.0f id: %i", i+1, input.touchPoints[i].position.x, input.touchPoints[i].position.y, input.touchPoints[i].id), 0, textY, textSize, RAYWHITE);
+        textY += textSize;
+    }
+
+    Vector2 mousePos = input.mouse.position;
+    DrawText(TextFormat("mouse: %3.0f, %3.0f", mousePos.x, mousePos.y), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
+    if (input.touchCount > 0)
+    {
+        for (int i = 0; i < input.touchCount; i++)
+        {
+            DrawText(TextFormat("touch %i: %3.0f, %3.0f", i, GetTouchPosition(i).x, GetTouchPosition(i).y), 0, textY, textSize, RAYWHITE);
+            textY += textSize;
+        }
+    }
+    DrawText(TextFormat("%2i rock total", game.rockLimit), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
+    DrawText(TextFormat("%2i remaining", game.rockLimit - game.eliminatedCount), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
+    DrawText(TextFormat("speed: %3.0f", Vector2Length(game.ship.velocity)), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
 }

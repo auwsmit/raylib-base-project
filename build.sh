@@ -37,7 +37,6 @@ cmake_build_dir=build
 source_dir=src
 source_code=
 for f in "$script_dir/$source_dir"/*.c; do source_code="$source_code \"$f\""; done
-for f in "$script_dir/$source_dir/module"/*.c; do source_code="$source_code \"$f\""; done
 for f in "$script_dir/$source_dir/entity"/*.c; do source_code="$source_code \"$f\""; done
 
 # Script Entry Point

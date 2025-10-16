@@ -46,7 +46,7 @@ endif()
 # Setup Project
 # --------------------------------------------------------------------------------
 
-file(GLOB SRC_FILES src/*.c src/module/*.c src/entity/*.c)
+file(GLOB SRC_FILES src/*.c src/entity/*.c)
 add_executable(${OUTPUT_NAME} ${SRC_FILES})
 target_include_directories(${OUTPUT_NAME} PRIVATE src/include)
 target_link_libraries(${OUTPUT_NAME} ${LIBRARIES})

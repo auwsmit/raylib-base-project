@@ -9,15 +9,15 @@
 // Macros
 // ----------------------------------------------------------------------------
 
-#define UI_BUTTON_PADDING 20 // area around text to click
-#define UI_TRANSPARENCY 0.10f // only used for touch input buttons
-
-// Size of UI elements
+// UI elements
 #define UI_TITLE_SIZE        150   // title font size
 #define UI_TITLE_BUTTON_SIZE 80    // title menu button font size
 #define UI_CURSOR_SIZE       20.0f // cursor triangle size
 #define UI_FONT_SIZE_CENTER  140   // center of screen font size
 #define UI_FONT_SIZE_EDGE    75    // top of screen font size
+#define UI_BUTTON_THICKNESS  20    // area around text to click
+#define UI_TRANSPARENCY      0.10f // only used for touch input buttons
+
 
 // UI spacing
 #define UI_TITLE_TOP_PADDING 180 // space from the top of the screen
@@ -27,6 +27,7 @@
 
 // Virtual input
 #define UI_STICK_RADIUS 100.0f
+#define UI_INPUT_RADIUS 70.0f
 
 // Types and Structures
 // ----------------------------------------------------------------------------
@@ -49,9 +50,11 @@ typedef enum UiPauseMenuId {
 
 typedef struct UiButton {
     const char *text;
+    Texture icon;
+    float iconScale;
+    float radius;
     int buttonId;
     int fontSize;
-    // bool mouseHovered;
     bool clicked;
     Vector2 position;
     Color color;
@@ -79,7 +82,6 @@ typedef struct UiGamepad {
     UiAnalogStick stick;
 } UiGamepad;
 
-// Holds data for the title screen menu
 typedef struct UiState {
     UiGamepad gamepad;
     UiButton title[2]; // Title text
@@ -103,8 +105,9 @@ extern UiState ui; // global declaration
 
 // Initialize
 void InitUiState(void); // Initializes the title screen and allocates memory for menu buttons
-UiButton InitUiTitle(char *text);
+UiButton InitUiTitle(char *text, bool nextLine);
 UiButton InitUiButton(char *text, int buttonId, float textPosX, float textPosY, int fontSize);
+UiButton InitUiInputButton(char *text, int buttonId, float textPosX, float textPosY, float radius);
 UiButton *CreateUiMenuButton(char *text, UiMenu *menu, float textPosX, float textPosY, int fontSize); // Initializes a button within a menu
 UiButton *CreateUiMenuButtonRelative(char* text, UiMenu *menu, float offsetY, int fontSize); // Initializes a button within a menu relative to the last menu button
 void FreeUiState(void); // Frees memory for all menu buttons
@@ -112,7 +115,6 @@ void FreeUiState(void); // Frees memory for all menu buttons
 // Update / User Input
 void UpdateUiFrame(void); // Updates the menu for the current frame
 void UpdateUiMenuTraverse(void); // Updates the cursor for movement by user input
-// void UpdateUiButtonMouseHover(UiButton *button); // Draw cursor when mouse is over button
 void UpdateUiButtonSelect(UiButton *button); // Selects a button by user input
 void UpdateUiTouchInput(UiButton *button); // Updates virtual input from button
 void UpdateUiAnalogStick(UiAnalogStick *stick);
@@ -126,9 +128,11 @@ void DrawUiFrame(void); // Draws the menu for the current frame
 void DrawUiElement(UiButton *button);
 void DrawUiCursor(UiButton *selectedButton); // Draw the cursor at the given button
 void DrawUiOutline(UiButton *selectedButton); // Draw a highlight box around a given button
-void DrawUiAnalogStick (UiAnalogStick *stick); // Draw virtual analog stick
+void DrawUiInputButton(UiButton *button); // Draw touch input button
+void DrawUiAnalogStick(UiAnalogStick *stick); // Draw touch analog stick
 void DrawLives(void);
 void DrawCenterText(void); // Draws center text based on game state
                            // TODO replace with something like SetCenterText(char *text, float time)?
+void DrawDebugInfo(void);
 
 #endif // ASTEROIDS_MENU_HEADER_GUARD

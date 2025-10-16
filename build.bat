@@ -42,7 +42,6 @@ set cmake_build_dir=build
 set source_dir=src
 set source_code=
 for %%f in ("%script_dir%%source_dir%\*.c") do set source_code=!source_code! "%%f"
-for %%f in ("%script_dir%%source_dir%\module\*.c") do set source_code=!source_code! "%%f"
 for %%f in ("%script_dir%%source_dir%\entity\*.c") do set source_code=!source_code! "%%f"
 
 :: Unpack Arguments

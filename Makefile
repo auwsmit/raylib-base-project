@@ -28,11 +28,10 @@ SRC_DIR := src
 INC_DIR := $(SRC_DIR)/include
 HEADERS := $(wildcard $(INC_DIR)/*.h)
 SRC     := $(wildcard $(SRC_DIR)/*.c) \
-           $(wildcard $(SRC_DIR)/module/*.c) \
            $(wildcard $(SRC_DIR)/entity/*.c)
 
 # Specify paths for make to search for files
-VPATH   := $(SRC_DIR) $(SRC_DIR)/module $(SRC_DIR)/entity
+VPATH   := $(SRC_DIR) $(SRC_DIR)/entity
 
 # =============================================================================
 # Platform Settings

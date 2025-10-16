@@ -46,7 +46,7 @@ int main(void)
     InitAudioDevice();
     InitDefaultInputSettings();
     InitRaylibLogo();
-    InitUiState();   // also allocates memory for menu buttons
+    InitUiState();
     InitGameState(SCREEN_LOGO);
 
     // No exit key (use alt+F4 or in-game exit option)
@@ -108,6 +108,7 @@ void UpdateDrawFrame(void)
     ProcessUserInput();
     HandleToggleFullscreen();
     UpdateCameraViewport();
+    input.touchMode = true;
 
     switch(game.currentScreen)
     {
