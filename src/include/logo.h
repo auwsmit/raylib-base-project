@@ -23,7 +23,7 @@ typedef enum LogoState {
     LOGO_TEXT, LOGO_PAUSE, LOGO_END
 } LogoState;
 
-typedef struct Logo {
+typedef struct LogoAnimation {
     float positionX;
     float positionY;
 
@@ -37,9 +37,10 @@ typedef struct Logo {
 
     LogoState state; // Tracking animation states (State Machine)
     float alpha; // Useful for fading
-} Logo;
+    bool skipped;
+} LogoAnimation;
 
-extern Logo raylibLogo; // global declaration
+extern LogoAnimation raylibLogo; // global declaration
 
 // Prototypes
 // ----------------------------------------------------------------------------
@@ -49,3 +50,4 @@ void UpdateRaylibLogo(void); // Update logo animation for the current frame
 void DrawRaylibLogo(void);
 
 #endif // ASTEROIDS_LOGO_HEADER_GUARD
+
