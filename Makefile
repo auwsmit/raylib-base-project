@@ -2,9 +2,8 @@
 #
 # This makefile is used to build this project on Windows, Linux, or Mac.
 #
-# With no arguments, running `make` will build the game executable for Desktop
-# with gcc and place a copy in the repo directory. It can take a single
-# argument that specifies which compiler to use.
+# With no arguments, running `make` will build the game for Desktop with gcc.
+# The executable/output will be in the repo directory.
 #
 # Below is a list of arguments you can use:
 # `make CONFIG=RELEASE`  -> optimized build, no debug files (debug is default)
@@ -17,17 +16,16 @@
 # =============================================================================
 # Platform Detection
 # =============================================================================
+
+EXTENSION :=
 ifeq ($(PLATFORM),WEB)
     EXTENSION := .html
 else ifeq ($(OS),Windows_NT)
     EXTENSION := .exe
-else
-    ifeq ($(shell uname -s),Linux)
-        OS := LINUX
-    else ifeq ($(shell uname -s),Darwin)
-        OS := MAC
-    endif
-    EXTENSION :=
+else ifeq ($(shell uname -s),Linux)
+    OS := LINUX
+else ifeq ($(shell uname -s),Darwin)
+    OS := MAC
 endif
 
 ifeq ($(PLATFORM),WEB)
