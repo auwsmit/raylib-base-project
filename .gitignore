@@ -3,19 +3,20 @@ tags
 tags.*
 
 # build files
-code/*.obj
-code/*.o
-*.o
-*.obj
 build/
 build_web/
 out
 asteroids
 asteroids.exe
-asteroids.html
-asteroids.js
-asteroids.wasm
-asteroids.data
+index.html
+index.js
+index.wasm
+index.data
+
+code/*.obj
+code/*.o
+*.o
+*.obj
 
 # debug files
 *.pdb

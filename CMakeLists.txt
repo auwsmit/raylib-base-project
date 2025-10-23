@@ -62,6 +62,7 @@ set_target_properties(${OUTPUT_NAME} # working directory set to repo directory
 
 # Web
 if (${PLATFORM} STREQUAL "Web")
+  set(OUTPUT_NAME index)
   set_target_properties(${OUTPUT_NAME} PROPERTIES SUFFIX ".html")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Wno-missing-braces -Wunused-result -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion")
   set(CMAKE_C_FLAGS_RELEASE "-Os" CACHE STRING "" FORCE)
