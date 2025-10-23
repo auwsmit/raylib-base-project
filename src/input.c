@@ -79,8 +79,8 @@ void ProcessUserInput(void)
 
     // Update mouse
     input.mouse.position =     GetScreenToWorld2D(GetMousePosition(), game.camera);
-    input.mouse.delta =        GetMouseDelta();
-    input.mouse.moved =        (Vector2Length(input.mouse.delta) != 0);
+    input.mouse.delta =        Vector2Scale(GetMouseDelta(), 1.0f/game.camera.zoom);
+    input.mouse.moved =        (Vector2Length(input.mouse.delta) > EPSILON);
     input.mouse.tapped =       IsGestureDetected(GESTURE_TAP);
     input.mouse.leftPressed =  IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     input.mouse.leftDown =     IsMouseButtonDown(MOUSE_BUTTON_LEFT);
