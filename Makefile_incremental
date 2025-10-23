@@ -19,8 +19,10 @@
 # =============================================================================
 ifeq ($(PLATFORM),WEB)
     EXTENSION := .html
+    OBJ_EXT   := .o
 else ifeq ($(OS),Windows_NT)
     EXTENSION := .exe
+    OBJ_EXT   := .obj
 else
     ifeq ($(shell uname -s),Linux)
         OS := LINUX
@@ -28,6 +30,7 @@ else
         OS := MAC
     endif
     EXTENSION :=
+    OBJ_EXT   := .o
 endif
 
 ifeq ($(PLATFORM),WEB)
@@ -53,6 +56,8 @@ INC_DIR := $(SRC_DIR)/include
 HEADERS := $(wildcard $(INC_DIR)/*.h)
 SRC     := $(wildcard $(SRC_DIR)/*.c) \
            $(wildcard $(SRC_DIR)/entity/*.c)
+OBJ_DIR := $(SRC_DIR)/obj
+OBJS    := $(addprefix $(OBJ_DIR)/, $(notdir $(SRC:.c=$(OBJ_EXT))))
 
 # Tell `make` where to search for files
 VPATH := $(SRC_DIR) $(SRC_DIR)/entity
@@ -67,6 +72,8 @@ CFLAGS         := -std=c99 -Wall -Wno-missing-braces -Wunused-result
 CFLAGS         += -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 CPPFLAGS       := -I"raylib/include" -I"$(INC_DIR)" -D_DEFAULT_SOURCE
 PLATFORM_DEF   := -DPLATFORM_DESKTOP
+NO_LINK        := -c
+OBJ_OUT        := -o
 OUTPUT_FLAG    := -o $(OUTPUT)$(EXTENSION)
 ifeq ($(OS),Windows_NT)
     LDFLAGS    := -lraylib -L"raylib/lib/windows" -lopengl32 -lgdi32 -lwinmm
@@ -85,6 +92,8 @@ ifeq ($(CC),cl)
                       raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
     LDFLAGS_DEBUG  := /DEBUG
     PLATFORM_DEF   := /DPLATFORM_DESKTOP
+    NO_LINK        := /c
+    OBJ_OUT        := /Fo
     OUTPUT_FLAG    := /Fe:$(OUTPUT)$(EXTENSION)
 else ifeq ($(CC),emcc)
     OPTIMIZE_FLAGS := -Os
@@ -114,9 +123,28 @@ CFLAGS += $(CPPFLAGS) $(PLATFORM_DEF)
 # let `make` know that these aren't files
 .PHONY: all clang msvc web clean
 
-# Default: Compile all files for desktop
-all:
-	$(CC) $(CFLAGS) $(SRC) $(OUTPUT_FLAG) $(LDFLAGS)
+# # Default: Compile all files for desktop
+# all:
+# 	$(CC) $(CFLAGS) $(SRC) $(OUTPUT_FLAG) $(LDFLAGS)
+
+# Incremental build:
+# -----------------------------------------------------------------------------
+# Default: Compile for desktop
+all: $(OUTPUT)$(EXTENSION)
+
+# Link object files into final executable
+$(OUTPUT)$(EXTENSION): $(OBJS)
+	$(CC) $(OBJS) $(OUTPUT_FLAG) $(LDFLAGS)
+
+# Compile c files to object files
+$(OBJ_DIR)/%$(OBJ_EXT): %.c $(HEADERS)
+	$(CC) $(NO_LINK) $(CFLAGS) "$<" $(OBJ_OUT)"$@"
+
+# Create folder for object files
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+$(OBJS): | $(OBJ_DIR)
+# -----------------------------------------------------------------------------
 
 # Build with clang
 clang:
@@ -136,7 +164,7 @@ run:
 
 # Clean up generated build files
 clean:
-	@rm -rf $(OUTPUT)$(EXTENSION) \
+	@rm -rf $(OUTPUT)$(EXTENSION) $(OBJ_DIR) \
 	        index.html index.js index.wasm index.data build_web/ \
 	        $(OUTPUT).ilk $(OUTPUT).pdb vc140.pdb *.rdi
 	@echo "Make build files cleaned"
