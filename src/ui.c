@@ -65,13 +65,13 @@ void InitUiState(void)
     // Thrust button
     float flyPosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS - touchInputPadding;
     float flyPosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS - touchInputPadding*1.75f;
-    defaults.gamepad.fly = InitUiInputButton("Thrust", UI_BID_THRUST, flyPosX, flyPosY, UI_INPUT_RADIUS);
+    defaults.gamepad.fly = InitUiInputButton("Thrust", INPUT_ACTION_THRUST, flyPosX, flyPosY, UI_INPUT_RADIUS);
     defaults.gamepad.fly.icon = LoadTexture("assets/icon_button_a.png");
 
     // Shoot button
     float shootPosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS - touchInputPadding*2;
     float shootPosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS - touchInputPadding;
-    defaults.gamepad.shoot = InitUiInputButton("Shoot", UI_BID_SHOOT, shootPosX, shootPosY, UI_INPUT_RADIUS);
+    defaults.gamepad.shoot = InitUiInputButton("Shoot", INPUT_ACTION_SHOOT, shootPosX, shootPosY, UI_INPUT_RADIUS);
     defaults.gamepad.shoot.icon = LoadTexture("assets/icon_button_x.png");
 
     // Analog stick
@@ -87,7 +87,7 @@ void InitUiState(void)
     // Pause button
     float pausePosX = (stick.centerPos.x + shootPosX)/2;
     float pausePosY = VIRTUAL_HEIGHT - UI_STICK_RADIUS - touchInputPadding;
-    defaults.gamepad.pause = InitUiInputButton("Pause", UI_BID_PAUSE, pausePosX, pausePosY, UI_INPUT_RADIUS*0.75f);
+    defaults.gamepad.pause = InitUiInputButton("Pause", INPUT_ACTION_PAUSE, pausePosX, pausePosY, UI_INPUT_RADIUS*0.75f);
     defaults.gamepad.pause.icon = LoadTexture("assets/icon_pause.png");
     defaults.gamepad.pause.iconScale *= 0.75f;
 
@@ -125,13 +125,13 @@ UiButton InitUiButton(char *text, int buttonId, float textPosX, float textPosY, 
     return button;
 }
 
-UiButton InitUiInputButton(char *text, int buttonId, float textPosX, float textPosY, float radius)
+UiButton InitUiInputButton(char *text, int inputActionId, float textPosX, float textPosY, float radius)
 {
     UiButton button = {
         .text = text,
         .iconScale = 0.75f,
         .radius = radius,
-        .buttonId = buttonId,
+        .inputActionId = inputActionId,
         .position = { textPosX, textPosY },
         .color = RAYWHITE
     };
@@ -344,24 +344,21 @@ void UpdateUiButtonSelect(UiButton *button)
     }
 }
 
-void UpdateUiTouchInput(UiButton *button)
+void UpdateUiTouchInput(UiButton *button, int onPressOrHold)
 {
-    InputAction buttonInputAction;
-    if (button->buttonId == UI_BID_PAUSE)
-        buttonInputAction = INPUT_ACTION_PAUSE;
-    else if (button->buttonId == UI_BID_SHOOT)
-        buttonInputAction = INPUT_ACTION_SHOOT;
-    else if (button->buttonId == UI_BID_THRUST)
-        buttonInputAction = INPUT_ACTION_THRUST;
-    else return;
+    bool isValidPress;
+    if (!game.isPaused)
+    {
+        int touchIdx = CheckCollisionTouchCircle(button->position, button->radius);
+        isValidPress = (touchIdx != -1);
+        if (onPressOrHold == UI_INPUT_ON_PRESS)
+            isValidPress = IsTouchPointTapped(touchIdx);
+        if (isValidPress)
+            SetTouchPointButton(touchIdx, button->inputActionId);
+    }
+    else isValidPress = false;
 
-    int touchIdx = CheckCollisionTouchCircle(button->position, button->radius);
-    bool isValidPress = (touchIdx != -1);
-    if (isValidPress && (buttonInputAction == INPUT_ACTION_PAUSE))
-         isValidPress = IsTouchPointTapped(touchIdx);
-    if (isValidPress) SetTouchPointButton(touchIdx, button->buttonId);
-
-    SetTouchInputAction(buttonInputAction, isValidPress);
+    SetTouchInputAction(button->inputActionId, isValidPress);
     button->clicked = isValidPress;
 }
 

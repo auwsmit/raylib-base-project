@@ -142,13 +142,10 @@ void ProcessUserInput(void)
             input.touchPoints[i].pressedCurrentFrame = false;
 
         // Process touch gamepad
-        if (!game.isPaused)
-        {
-            UpdateUiTouchInput(&ui.gamepad.pause);
-            UpdateUiTouchInput(&ui.gamepad.shoot);
-            UpdateUiTouchInput(&ui.gamepad.fly);
-            UpdateUiAnalogStick(&ui.gamepad.stick);
-        }
+        UpdateUiTouchInput(&ui.gamepad.pause, UI_INPUT_ON_PRESS);
+        UpdateUiTouchInput(&ui.gamepad.shoot, UI_INPUT_ON_HOLD);
+        UpdateUiTouchInput(&ui.gamepad.fly, UI_INPUT_ON_HOLD);
+        UpdateUiAnalogStick(&ui.gamepad.stick);
     }
 
     // Check input mappings

@@ -28,6 +28,8 @@
 // Virtual input
 #define UI_STICK_RADIUS 100.0f
 #define UI_INPUT_RADIUS 70.0f
+#define UI_INPUT_ON_PRESS 0
+#define UI_INPUT_ON_HOLD 1
 
 // Types and Structures
 // ----------------------------------------------------------------------------
@@ -40,10 +42,6 @@ typedef enum UiTitleMenuId {
     UI_BID_START, UI_BID_TITLE_EXIT
 } UiTitleMenuId;
 
-typedef enum UiGameplayButtonId {
-    UI_BID_PAUSE, UI_BID_SHOOT, UI_BID_THRUST
-} UiGameplayButtonId;
-
 typedef enum UiPauseMenuId {
     UI_BID_RESUME, UI_BID_BACKTOTITLE, UI_BID_PAUSE_EXIT
 } UiPauseMenuId;
@@ -54,6 +52,7 @@ typedef struct UiButton {
     float iconScale;
     float radius;
     int buttonId;
+    int inputActionId;
     int fontSize;
     bool clicked;
     Vector2 position;
@@ -107,7 +106,7 @@ extern UiState ui; // global declaration
 void InitUiState(void); // Initializes the title screen and allocates memory for menu buttons
 UiButton InitUiTitle(char *text, bool nextLine);
 UiButton InitUiButton(char *text, int buttonId, float textPosX, float textPosY, int fontSize);
-UiButton InitUiInputButton(char *text, int buttonId, float textPosX, float textPosY, float radius);
+UiButton InitUiInputButton(char *text, int inputActionId, float textPosX, float textPosY, float radius);
 UiButton *CreateUiMenuButton(char *text, UiMenu *menu, float textPosX, float textPosY, int fontSize); // Initializes a button within a menu
 UiButton *CreateUiMenuButtonRelative(char* text, UiMenu *menu, float offsetY, int fontSize); // Initializes a button within a menu relative to the last menu button
 void FreeUiState(void); // Frees memory for all menu buttons
@@ -116,7 +115,7 @@ void FreeUiState(void); // Frees memory for all menu buttons
 void UpdateUiFrame(void); // Updates the menu for the current frame
 void UpdateUiMenuTraverse(void); // Updates the cursor for movement by user input
 void UpdateUiButtonSelect(UiButton *button); // Selects a button by user input
-void UpdateUiTouchInput(UiButton *button); // Updates virtual input from button
+void UpdateUiTouchInput(UiButton *button, int onPressOrHold); // Updates virtual input from button
 void UpdateUiAnalogStick(UiAnalogStick *stick);
 void ChangeUiMenu(UiMenuState newMenu); // Change from one menu to another
 
