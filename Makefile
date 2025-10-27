@@ -14,27 +14,6 @@
 # -----------------------------------------------------------------------------
 
 # =============================================================================
-# Platform Detection
-# =============================================================================
-
-EXTENSION :=
-ifeq ($(PLATFORM),WEB)
-    EXTENSION := .html
-else ifeq ($(OS),Windows_NT)
-    EXTENSION := .exe
-else ifeq ($(shell uname -s),Linux)
-    OS := LINUX
-else ifeq ($(shell uname -s),Darwin)
-    OS := MAC
-endif
-
-ifeq ($(PLATFORM),WEB)
-    CC := emcc
-else
-    CC ?= gcc
-endif
-
-# =============================================================================
 # Project Config
 # =============================================================================
 
@@ -65,14 +44,23 @@ CFLAGS         := -std=c99 -Wall -Wno-missing-braces -Wunused-result
 CFLAGS         += -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 CPPFLAGS       := -I"raylib/include" -I"$(INC_DIR)" -D_DEFAULT_SOURCE
 PLATFORM_DEF   := -DPLATFORM_DESKTOP
-OUTPUT_FLAG    := -o $(OUTPUT)$(EXTENSION)
+EXTENSION      :=
 ifeq ($(OS),Windows_NT)
+    EXTENSION  := .exe
     LDFLAGS    := -lraylib -L"raylib/lib/windows" -lopengl32 -lgdi32 -lwinmm
-else ifeq ($(OS),LINUX)
+else ifeq ($(shell uname -s),Linux)
     LDFLAGS    := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-else ifeq ($(OS),MAC)
+else ifeq ($(shell uname -s),Darwin)
     LDFLAGS    := -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 endif
+LDFLAGS_DEBUG  :=
+ifeq ($(PLATFORM),WEB)
+    EXTENSION  := .html
+    CC := emcc
+else
+    CC ?= gcc
+endif
+OUTPUT_FLAG := -o $(OUTPUT)$(EXTENSION)
 
 # Compiler-specific overrides
 ifeq ($(CC),cl)
@@ -110,7 +98,7 @@ CFLAGS += $(CPPFLAGS) $(PLATFORM_DEF)
 # =============================================================================
 
 # let `make` know that these aren't files
-.PHONY: all clang msvc web clean
+.PHONY: all clang msvc web clean run
 
 # Default: Compile all files for desktop
 all:
@@ -135,6 +123,6 @@ run:
 # Clean up generated build files
 clean:
 	@rm -rf $(OUTPUT)$(EXTENSION) \
-	        index.html index.js index.wasm index.data build_web/ \
+	        index.html index.js index.wasm index.data \
 	        $(OUTPUT).ilk $(OUTPUT).pdb vc140.pdb *.rdi
 	@echo "Make build files cleaned"
