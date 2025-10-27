@@ -18,7 +18,7 @@
 # =============================================================================
 
 # Output name
-ifeq ($(CC),emcc)
+ifeq ($(PLATFORM),WEB)
     OUTPUT := index
 else
     OUTPUT := asteroids
@@ -31,9 +31,6 @@ HEADERS := $(wildcard $(INC_DIR)/*.h)
 SRC     := $(wildcard $(SRC_DIR)/*.c) \
            $(wildcard $(SRC_DIR)/entity/*.c)
 
-# Tell `make` where to search for files
-VPATH := $(SRC_DIR) $(SRC_DIR)/entity
-
 # Debug build by default
 CONFIG  ?= DEBUG
 
@@ -44,13 +41,15 @@ CFLAGS         := -std=c99 -Wall -Wno-missing-braces -Wunused-result
 CFLAGS         += -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wfloat-conversion
 CPPFLAGS       := -I"raylib/include" -I"$(INC_DIR)" -D_DEFAULT_SOURCE
 PLATFORM_DEF   := -DPLATFORM_DESKTOP
+
+# OS and platform settings
 EXTENSION      :=
 ifeq ($(OS),Windows_NT)
     EXTENSION  := .exe
     LDFLAGS    := -lraylib -L"raylib/lib/windows" -lopengl32 -lgdi32 -lwinmm
 else ifeq ($(shell uname -s),Linux)
     LDFLAGS    := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-else ifeq ($(shell uname -s),Darwin)
+else ifeq ($(shell uname -s),Darwin) # MacOS
     LDFLAGS    := -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 endif
 LDFLAGS_DEBUG  :=
